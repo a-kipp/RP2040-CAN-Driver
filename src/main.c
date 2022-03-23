@@ -48,25 +48,134 @@
 #define SPI_PORT spi0
 #define READ_BIT 0x80
 
-static inline void cs_select() {
-    asm volatile("nop \n nop \n nop");
-    gpio_put(PIN_CS, 0);  // Active low
-    asm volatile("nop \n nop \n nop");
+
+
+
+//-------------------------------------------------------------------------------------
+typedef struct Mcp2515 {
+    uint16_t buttons;
+    uint pinMiso;
+    uint pinCs;
+    uint pinSck;
+    uint pinMosi;
+    spi_inst_t* spiPort;
+} Mcp2515;
+
+#define READ_BIT 0x80
+
+
+void mcp2515_init(Mcp2515* mcp2515,
+                  uint pinMiso,
+                  uint pinCs,
+                  uint pinSck,
+                  uint pinMosi,
+                  spi_inst_t * spiPort) {
+
 }
 
-static inline void cs_deselect() {
-    asm volatile("nop \n nop \n nop");
-    gpio_put(PIN_CS, 1);
-    asm volatile("nop \n nop \n nop");
+
+uint8_t mcp2515_read_status_old(Mcp2515* mcp2515, uint8_t type)
+{
+	uint8_t data = 0x00;
+	
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
+    spi_read_blocking(mcp2515->spiPort, 0, &data, 1);
+    spi_write_blocking(mcp2515->spiPort, &type, 1);
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active high
+	
+	
+	return data;
 }
+
+static uint8_t mcp2515_readStatus(Mcp2515* mcp2515) {
+    // get content of status register
+    //
+    // MISO  1 0 1 0 0 0 0 0 _______________
+    // MOSI  _______________ n n n n n n n n
+    //      |<-instruction->|<----data----->|
+
+    const uint8_t READ_STATUS_INSTRUCTION = 0b10100000;
+    uint8_t recieveBuffer = 0xAA;
+
+    gpio_put(PIN_CS, 0);
+    spi_write_blocking(SPI_PORT, &READ_STATUS_INSTRUCTION, 1);
+    spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
+    gpio_put(PIN_CS, 1);
+    sleep_ms(10);
+
+    return recieveBuffer;
+}
+
+
+static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
+    // write one byte of data to a register
+    //
+    // MISO  0 0 0 0 0 0 1 0 n n n n n n n n n n n n n n n n
+    // MOSI  _______________ _______________ _______________
+    //      |<-instruction->|<---address--->|<----data----->|
+
+    const uint8_t BYTE_WRITE_INSTRUCTION = 0b00000010;
+
+    gpio_put(PIN_CS, 0);  // chip select, active low
+    spi_write_blocking(SPI_PORT, &BYTE_WRITE_INSTRUCTION, 1);
+    spi_write_blocking(SPI_PORT, &address, 1);
+    spi_write_blocking(SPI_PORT, &data, 1);
+    gpio_put(PIN_CS, 1);  // chip deselect, active high
+    sleep_ms(10);
+}
+
+
+static uint8_t mcp2515_readByte(Mcp2515* mcp2515, uint8_t address) {
+    // write one byte of data to a register
+    //
+    // MISO  0 0 0 0 0 0 1 1 n n n n n n n n _______________
+    // MOSI  _______________ _______________ n n n n n n n n
+    //      |<-instruction->|<---address--->|<----data----->|
+
+    const uint8_t BYTE_READ_INSTRUCTION = 0b00000011;
+    uint8_t recieveBuffer = 0xAA;
+
+    gpio_put(PIN_CS, 0);  // chip select, active low
+    spi_write_blocking(SPI_PORT, &BYTE_READ_INSTRUCTION, 1);
+    spi_write_blocking(SPI_PORT, &address, 1);
+    spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
+    gpio_put(PIN_CS, 1);  // chip deselect, active high
+    sleep_ms(10);
+
+    return recieveBuffer;
+}
+
+
+static void mcp2515_reset(Mcp2515* mcp2515) {
+    // get content of status register
+    //
+    // MISO  1 1 0 0 0 0 0 0 
+    // MOSI  _______________ 
+    //      |<-instruction->|
+
+    const uint8_t RESET_INSTRUCTION = 0b11000000;
+
+    gpio_put(PIN_CS, 0);
+    spi_write_blocking(SPI_PORT, &RESET_INSTRUCTION, 1);
+    gpio_put(PIN_CS, 1);
+    sleep_ms(10);
+}
+
+
+//-------------------------------------------------------------------------------------
+
+
+
+
+
 
 static void mpu9250_reset() {
     // Two byte reset. First byte register, second byte data
     // There are a load more options to set up the device in different ways that could be added here
     uint8_t buf[] = {0x6B, 0x00};
-    cs_select();
+    gpio_put(PIN_CS, 0);
     spi_write_blocking(SPI_PORT, buf, 2);
-    cs_deselect();
+    gpio_put(PIN_CS, 1);
 }
 
 
@@ -76,11 +185,11 @@ static void read_registers(uint8_t reg, uint8_t *buf, uint16_t len) {
     // so we don't need to keep sending the register we want, just the first.
 
     reg |= READ_BIT;
-    cs_select();
+    gpio_put(PIN_CS, 0);
     spi_write_blocking(SPI_PORT, &reg, 1);
     sleep_ms(10);
     spi_read_blocking(SPI_PORT, 0, buf, len);
-    cs_deselect();
+    gpio_put(PIN_CS, 1);
     sleep_ms(10);
 }
 
@@ -111,6 +220,14 @@ static void mpu9250_read_raw(int16_t accel[3], int16_t gyro[3], int16_t *temp) {
 int main() {
     stdio_init_all();
 
+//-------------------------------------------------------------------------------------
+    Mcp2515 mcp2515;
+
+    mcp2515_init(&mcp2515, PIN_MISO, PIN_CS, PIN_SCK, PIN_MOSI, spi0);
+//-------------------------------------------------------------------------------------
+
+
+
     printf("Hello, MPU9250! Reading raw data from registers via SPI...\n");
 
     // This example will use SPI0 at 0.5MHz.
@@ -138,17 +255,23 @@ int main() {
     int16_t acceleration[3], gyro[3], temp;
 
     while (1) {
-        mpu9250_read_raw(acceleration, gyro, &temp);
+        //mpu9250_read_raw(acceleration, gyro, &temp);
+
+//-------------------------------------------------------------------------------------
+        uint8_t status = mcp2515_readStatus(&mcp2515);
+//-------------------------------------------------------------------------------------
+
+        printf("%04X\n", status);
 
         // These are the raw numbers from the chip, so will need tweaking to be really useful.
         // See the datasheet for more information
-        printf("Acc. X = %d, Y = %d, Z = %d\n", acceleration[0], acceleration[1], acceleration[2]);
-        printf("Gyro. X = %d, Y = %d, Z = %d\n", gyro[0], gyro[1], gyro[2]);
+        //printf("Acc. X = %d, Y = %d, Z = %d\n", acceleration[0], acceleration[1], acceleration[2]);
+        //printf("Gyro. X = %d, Y = %d, Z = %d\n", gyro[0], gyro[1], gyro[2]);
         // Temperature is simple so use the datasheet calculation to get deg C.
         // Note this is chip temperature.
-        printf("Temp. = %f\n", (temp / 340.0) + 36.53);
+        //printf("Temp. = %f\n", (temp / 340.0) + 36.53);
 
-        sleep_ms(100);
+        sleep_ms(1);
     }
 
     return 0;
