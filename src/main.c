@@ -41,9 +41,11 @@
 */
 
 #define PIN_MISO 4
-#define PIN_CS   5
+#define PIN_CS_A 3
+#define PIN_CS_B 5
 #define PIN_SCK  6
 #define PIN_MOSI 7
+
 
 #define SPI_PORT spi0
 #define READ_BIT 0x80
@@ -146,6 +148,25 @@ void mcp2515_init(Mcp2515* mcp2515, uint pinCs) {
     mcp2515_reset(mcp2515);
 }
 
+
+
+static uint8_t mcp2515_sendMessage(Mcp2515* mcp2515, uint8_t data) {
+
+    const uint8_t TXB0SIDH_REGISTER = 0b00110001;
+    const uint8_t TXB0SIDL_REGISTER = 0b00110010;
+    const uint8_t TXB0DLC_REGISTER = 0b00110101;
+    const uint8_t TXB0D0_REGISTER = 0b00110101;
+    const uint8_t TXB0CTRL_REGISTER = 0x30;
+
+    mcp2515_writeByte(mcp2515, TXB0SIDH_REGISTER, 0);
+    mcp2515_writeByte(mcp2515, TXB0SIDL_REGISTER, 0);
+    mcp2515_writeByte(mcp2515, TXB0DLC_REGISTER, 0);
+    mcp2515_writeByte(mcp2515, TXB0D0_REGISTER, data);
+    mcp2515_writeByte(mcp2515, TXB0CTRL_REGISTER, 0b00001000);
+    return mcp2515_readByte(mcp2515, TXB0CTRL_REGISTER);
+}
+
+
 //-------------------------------------------------------------------------------------
 
 
@@ -165,23 +186,29 @@ int main() {
     bi_decl(bi_3pins_with_func(PIN_MISO, PIN_MOSI, PIN_SCK, GPIO_FUNC_SPI));
 
     // Chip select is active-low, so we'll initialise it to a driven-high state
-    gpio_init(PIN_CS);
-    gpio_set_dir(PIN_CS, GPIO_OUT);
-    gpio_put(PIN_CS, 1);
-    // Make the CS pin available to picotool
-    bi_decl(bi_1pin_with_name(PIN_CS, "SPI CS"));
+    gpio_init(PIN_CS_A);
+    gpio_set_dir(PIN_CS_A, GPIO_OUT);
+    gpio_put(PIN_CS_A, 1);
 
-    Mcp2515 mcp2515;
+    gpio_init(PIN_CS_B);
+    gpio_set_dir(PIN_CS_B, GPIO_OUT);
+    gpio_put(PIN_CS_B, 1);
 
-    mcp2515_init(&mcp2515, PIN_CS);
+    Mcp2515 canA;
+    mcp2515_init(&canA, PIN_CS_A);
+    Mcp2515 canB;
+    mcp2515_init(&canA, PIN_CS_B);
+    
 
     while (1) {
 
 //-------------------------------------------------------------------------------------
-        uint8_t status = mcp2515_readStatus(&mcp2515);
+        uint8_t status = mcp2515_readStatus(&canA);
 //-------------------------------------------------------------------------------------
 
-        printf("%02X\n", status);
+        //printf("%02X\n", status);
+
+        printf("%02X\n", mcp2515_sendMessage(&canA, 0xBB));
 
         sleep_ms(100);
     }
