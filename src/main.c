@@ -61,31 +61,9 @@ typedef struct Mcp2515 {
     spi_inst_t* spiPort;
 } Mcp2515;
 
-#define READ_BIT 0x80
 
 
-void mcp2515_init(Mcp2515* mcp2515,
-                  uint pinMiso,
-                  uint pinCs,
-                  uint pinSck,
-                  uint pinMosi,
-                  spi_inst_t * spiPort) {
 
-}
-
-
-uint8_t mcp2515_read_status_old(Mcp2515* mcp2515, uint8_t type)
-{
-	uint8_t data = 0x00;
-	
-    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
-    spi_read_blocking(mcp2515->spiPort, 0, &data, 1);
-    spi_write_blocking(mcp2515->spiPort, &type, 1);
-    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active high
-	
-	
-	return data;
-}
 
 static uint8_t mcp2515_readStatus(Mcp2515* mcp2515) {
     // get content of status register
@@ -97,10 +75,10 @@ static uint8_t mcp2515_readStatus(Mcp2515* mcp2515) {
     const uint8_t READ_STATUS_INSTRUCTION = 0b10100000;
     uint8_t recieveBuffer = 0xAA;
 
-    gpio_put(PIN_CS, 0);
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
     spi_write_blocking(SPI_PORT, &READ_STATUS_INSTRUCTION, 1);
     spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
-    gpio_put(PIN_CS, 1);
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
     sleep_ms(10);
 
     return recieveBuffer;
@@ -116,11 +94,11 @@ static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
 
     const uint8_t BYTE_WRITE_INSTRUCTION = 0b00000010;
 
-    gpio_put(PIN_CS, 0);  // chip select, active low
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
     spi_write_blocking(SPI_PORT, &BYTE_WRITE_INSTRUCTION, 1);
     spi_write_blocking(SPI_PORT, &address, 1);
     spi_write_blocking(SPI_PORT, &data, 1);
-    gpio_put(PIN_CS, 1);  // chip deselect, active high
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
     sleep_ms(10);
 }
 
@@ -135,11 +113,11 @@ static uint8_t mcp2515_readByte(Mcp2515* mcp2515, uint8_t address) {
     const uint8_t BYTE_READ_INSTRUCTION = 0b00000011;
     uint8_t recieveBuffer = 0xAA;
 
-    gpio_put(PIN_CS, 0);  // chip select, active low
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
     spi_write_blocking(SPI_PORT, &BYTE_READ_INSTRUCTION, 1);
     spi_write_blocking(SPI_PORT, &address, 1);
     spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
-    gpio_put(PIN_CS, 1);  // chip deselect, active high
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
     sleep_ms(10);
 
     return recieveBuffer;
@@ -155,78 +133,26 @@ static void mcp2515_reset(Mcp2515* mcp2515) {
 
     const uint8_t RESET_INSTRUCTION = 0b11000000;
 
-    gpio_put(PIN_CS, 0);
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
     spi_write_blocking(SPI_PORT, &RESET_INSTRUCTION, 1);
-    gpio_put(PIN_CS, 1);
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
     sleep_ms(10);
 }
 
+
+
+void mcp2515_init(Mcp2515* mcp2515, uint pinCs) {
+    mcp2515->pinCs = pinCs;
+    mcp2515_reset(mcp2515);
+}
 
 //-------------------------------------------------------------------------------------
 
 
 
-
-
-
-static void mpu9250_reset() {
-    // Two byte reset. First byte register, second byte data
-    // There are a load more options to set up the device in different ways that could be added here
-    uint8_t buf[] = {0x6B, 0x00};
-    gpio_put(PIN_CS, 0);
-    spi_write_blocking(SPI_PORT, buf, 2);
-    gpio_put(PIN_CS, 1);
-}
-
-
-static void read_registers(uint8_t reg, uint8_t *buf, uint16_t len) {
-    // For this particular device, we send the device the register we want to read
-    // first, then subsequently read from the device. The register is auto incrementing
-    // so we don't need to keep sending the register we want, just the first.
-
-    reg |= READ_BIT;
-    gpio_put(PIN_CS, 0);
-    spi_write_blocking(SPI_PORT, &reg, 1);
-    sleep_ms(10);
-    spi_read_blocking(SPI_PORT, 0, buf, len);
-    gpio_put(PIN_CS, 1);
-    sleep_ms(10);
-}
-
-
-static void mpu9250_read_raw(int16_t accel[3], int16_t gyro[3], int16_t *temp) {
-    uint8_t buffer[6];
-
-    // Start reading acceleration registers from register 0x3B for 6 bytes
-    read_registers(0x3B, buffer, 6);
-
-    for (int i = 0; i < 3; i++) {
-        accel[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);
-    }
-
-    // Now gyro data from reg 0x43 for 6 bytes
-    read_registers(0x43, buffer, 6);
-
-    for (int i = 0; i < 3; i++) {
-        gyro[i] = (buffer[i * 2] << 8 | buffer[(i * 2) + 1]);;
-    }
-
-    // Now temperature from reg 0x41 for 2 bytes
-    read_registers(0x41, buffer, 2);
-
-    *temp = buffer[0] << 8 | buffer[1];
-}
 
 int main() {
     stdio_init_all();
-
-//-------------------------------------------------------------------------------------
-    Mcp2515 mcp2515;
-
-    mcp2515_init(&mcp2515, PIN_MISO, PIN_CS, PIN_SCK, PIN_MOSI, spi0);
-//-------------------------------------------------------------------------------------
-
-
 
     printf("Hello, MPU9250! Reading raw data from registers via SPI...\n");
 
@@ -245,33 +171,19 @@ int main() {
     // Make the CS pin available to picotool
     bi_decl(bi_1pin_with_name(PIN_CS, "SPI CS"));
 
-    mpu9250_reset();
+    Mcp2515 mcp2515;
 
-    // See if SPI is working - interrograte the device for its I2C ID number, should be 0x71
-    uint8_t id;
-    read_registers(0x75, &id, 1);
-    printf("I2C address is 0x%x\n", id);
-
-    int16_t acceleration[3], gyro[3], temp;
+    mcp2515_init(&mcp2515, PIN_CS);
 
     while (1) {
-        //mpu9250_read_raw(acceleration, gyro, &temp);
 
 //-------------------------------------------------------------------------------------
         uint8_t status = mcp2515_readStatus(&mcp2515);
 //-------------------------------------------------------------------------------------
 
-        printf("%04X\n", status);
+        printf("%02X\n", status);
 
-        // These are the raw numbers from the chip, so will need tweaking to be really useful.
-        // See the datasheet for more information
-        //printf("Acc. X = %d, Y = %d, Z = %d\n", acceleration[0], acceleration[1], acceleration[2]);
-        //printf("Gyro. X = %d, Y = %d, Z = %d\n", gyro[0], gyro[1], gyro[2]);
-        // Temperature is simple so use the datasheet calculation to get deg C.
-        // Note this is chip temperature.
-        //printf("Temp. = %f\n", (temp / 340.0) + 36.53);
-
-        sleep_ms(1);
+        sleep_ms(100);
     }
 
     return 0;
