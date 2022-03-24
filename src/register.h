@@ -2,10 +2,10 @@
     #define ABTF_FLAG         0b01000000 // Message Aborted
     #define MLOA_FLAG         0b00100000 // Message Lost Arbitration
     #define TXERR_FLAG        0b00010000 // Transmission Error
-    #define TXREQ_FLAG        0b00001000 // Message Transmit Request
+    #define TXREQ_FLAG        3 // Message Transmit Request
     #define TXP1_BIT          0b00000010 // Transmit Buffer Priority 1
     #define TXP0_BIT          0b00000001 // Transmit Buffer Priority 0
-#define TXB0SIDH_REGISTER 0b00110001 // TANDARD IDENTIFIER REGISTER HIGH
+#define TXB0SIDH_REGISTER 0b00110001 // STANDARD IDENTIFIER REGISTER HIGH
     #define SID10_BIT         0b10000000
     #define SID9_BIT          0b01000000
     #define SID8_BIT          0b00100000
@@ -14,7 +14,7 @@
     #define SID5_BIT          0b00000100
     #define SID4_BIT          0b00000010
     #define SID3_BIT          0b00000001
-#define TXB0SIDL_REGISTER 0b00110010 // TANDARD IDENTIFIER REGISTER LOW
+#define TXB0SIDL_REGISTER 0b00110010 // STANDARD IDENTIFIER REGISTER LOW
     #define SID2_BIT          0b10000000
     #define SID1_BIT          0b01000000
     #define SID0_BIT          0b00100000

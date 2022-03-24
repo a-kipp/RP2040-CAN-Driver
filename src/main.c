@@ -117,6 +117,26 @@ static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
 
 
 
+static void mcp2515_bitModify(Mcp2515* mcp2515, uint8_t address, uint8_t mask, uint8_t data) {
+    // write one byte of data to a register
+    //
+    // MISO  0 0 0 0 0 0 1 0 n n n n n n n n n n n n n n n n n n n n n n n n
+    // MOSI  _______________ _______________ _______________ _______________
+    //      |<-instruction->|<---address--->|<----mask----->|<----data----->|
+
+    const uint8_t BYTE_WRITE_INSTRUCTION = 0b00000010;
+
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
+    spi_write_blocking(SPI_PORT, &BYTE_WRITE_INSTRUCTION, 1);
+    spi_write_blocking(SPI_PORT, &address, 1);
+    spi_write_blocking(SPI_PORT, &mask, 1);
+    spi_write_blocking(SPI_PORT, &data, 1);
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
+}
+
+
+
+
 static uint8_t mcp2515_readByte(Mcp2515* mcp2515, uint8_t address) {
     // write one byte of data to a register
     //
@@ -204,19 +224,18 @@ void mcp2515_init(Mcp2515* mcp2515, uint pinCs, uint baudrate) {
 
 static void mcp2515_sendMessage(Mcp2515* mcp2515, uint8_t data) {
 
-    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0CTRL_REGISTER));
+    // Load Registers with 11 bit message identifier.
     mcp2515_writeByte(mcp2515, TXB0SIDH_REGISTER, 0b10000000);
     mcp2515_writeByte(mcp2515, TXB0SIDL_REGISTER, 0b00000000);
+
+    // Set length of data, maximum is 8 Byte.
     mcp2515_writeByte(mcp2515, TXB0DLC_REGISTER, 1);
+
+    // Load Data to transmit registers
     mcp2515_writeByte(mcp2515, TXB0D0_REGISTER, data);
-    sleep_ms(100);
-    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0SIDH_REGISTER));
-    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0SIDL_REGISTER));
-    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0DLC_REGISTER));
-    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0D0_REGISTER));
-    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0CTRL_REGISTER));
-    sleep_ms(100);
-    mcp2515_writeByte(mcp2515, TXB0CTRL_REGISTER, 0b00001011);
+
+    // Set Transmit request flag
+    mcp2515_writeByte(mcp2515, TXB0CTRL_REGISTER, 1<<TXREQ_FLAG);
 
 }
 
@@ -264,7 +283,7 @@ int main() {
     
 
     while (1) {
-        mcp2515_init(&canA, PIN_CS_A, 100);
+        //mcp2515_init(&canA, PIN_CS_A, 100);
         mcp2515_sendMessage(&canA, 0xBB);
         //printf("%02X\n", mcp2515_recieveMessage(&canB));
         
