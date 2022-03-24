@@ -9,6 +9,7 @@
 #include "pico/stdlib.h"
 #include "pico/binary_info.h"
 #include "hardware/spi.h"
+#include "register.h"
 
 /* Example code to talk to a MPU9250 MEMS accelerometer and gyroscope.
    Ignores the magnetometer, that is left as a exercise for the reader.
@@ -41,16 +42,27 @@
 */
 
 #define PIN_MISO 4
-#define PIN_CS_A 3
-#define PIN_CS_B 5
+#define PIN_CS_A 5
+#define PIN_CS_B 3
 #define PIN_SCK  6
 #define PIN_MOSI 7
 
+#define CAN_500kbps 1
+#define CAN_250kbps 3
+#define CAN_125kbps 7
+#define CAN_BITRATE CAN_125kbps
 
 #define SPI_PORT spi0
 #define READ_BIT 0x80
 
-
+void print_binary_8bit(uint8_t integer_number) {
+    for(int i=0; i<8; i++) {
+        if(i%8 == 0) printf(" ");
+        printf("%d", (integer_number>>7));
+        integer_number<<=1;
+    }
+    printf("\n");
+}
 
 
 //-------------------------------------------------------------------------------------
@@ -81,10 +93,10 @@ static uint8_t mcp2515_readStatus(Mcp2515* mcp2515) {
     spi_write_blocking(SPI_PORT, &READ_STATUS_INSTRUCTION, 1);
     spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
     gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
-    sleep_ms(10);
 
     return recieveBuffer;
 }
+
 
 
 static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
@@ -101,8 +113,8 @@ static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
     spi_write_blocking(SPI_PORT, &address, 1);
     spi_write_blocking(SPI_PORT, &data, 1);
     gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
-    sleep_ms(10);
 }
+
 
 
 static uint8_t mcp2515_readByte(Mcp2515* mcp2515, uint8_t address) {
@@ -120,10 +132,10 @@ static uint8_t mcp2515_readByte(Mcp2515* mcp2515, uint8_t address) {
     spi_write_blocking(SPI_PORT, &address, 1);
     spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
     gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
-    sleep_ms(10);
 
     return recieveBuffer;
 }
+
 
 
 static void mcp2515_reset(Mcp2515* mcp2515) {
@@ -142,28 +154,79 @@ static void mcp2515_reset(Mcp2515* mcp2515) {
 }
 
 
+void mcp2515_init(Mcp2515* mcp2515, uint pinCs, uint baudrate) {
 
-void mcp2515_init(Mcp2515* mcp2515, uint pinCs) {
+    // Assign chip select pin.
     mcp2515->pinCs = pinCs;
+
+    // Reset the controller. Controller is in configuration mode after reset.
     mcp2515_reset(mcp2515);
+    sleep_ms(10);
+
+    // Setup the baudrate control register CNF3..CNF1.
+    uint8_t cnf3;
+    uint8_t cnf2;
+    uint8_t cnf1;
+    switch (baudrate) {
+        case 10:  cnf3 = 0x04; cnf2 = 0xb6; cnf3 = 0xe7; break;
+        case 20:  cnf3 = 0x04; cnf2 = 0xb6; cnf3 = 0xd3; break;
+        case 50:  cnf3 = 0x04; cnf2 = 0xb6; cnf3 = 0xc7; break;
+        case 100: cnf3 = 0x04; cnf2 = 0xb6; cnf3 = 0xc3; break;
+        case 250: cnf3 = 0x03; cnf2 = 0xac; cnf3 = 0x81; break;
+        case 500: cnf3 = 0x03; cnf2 = 0xac; cnf3 = 0x80; break;
+        default: printf("selected baudrate not avialable");
+    }
+    mcp2515_writeByte(mcp2515, CNF3_REGISTER, cnf3);
+    mcp2515_writeByte(mcp2515, CNF2_REGISTER, cnf2);
+    mcp2515_writeByte(mcp2515, CNF1_REGISTER, cnf1);
+
+    // Setup interrupt control register CANINTE
+    mcp2515_writeByte(mcp2515, CANINTE_REGISTER, 0); // no interrupts used currently
+
+    // Deactivate RXnBF Pins (High Impedance State).
+    mcp2515_writeByte(mcp2515, BFPCTRL_REGISTER, 0);
+
+    // Controller has seperate pins for triggering a message transmission, not used.
+    mcp2515_writeByte(mcp2515, TXRTSCTRL_REGISTER, 0);
+
+    // Set controller to normal mode and activate clockout
+    mcp2515_writeByte(mcp2515, CANCTRL_REGISTER, 0b00000100);
+
+    // test if controller is accesable by reading from previously written registers.
+    if (cnf1 != mcp2515_readByte(mcp2515, CNF1_REGISTER)) {
+        printf("controller is not accesable\n");
+    };
+    print_binary_8bit(cnf3);
+    print_binary_8bit(mcp2515_readByte(mcp2515, CNF1_REGISTER));
 }
 
 
 
-static uint8_t mcp2515_sendMessage(Mcp2515* mcp2515, uint8_t data) {
+static void mcp2515_sendMessage(Mcp2515* mcp2515, uint8_t data) {
 
-    const uint8_t TXB0SIDH_REGISTER = 0b00110001;
-    const uint8_t TXB0SIDL_REGISTER = 0b00110010;
-    const uint8_t TXB0DLC_REGISTER = 0b00110101;
-    const uint8_t TXB0D0_REGISTER = 0b00110101;
-    const uint8_t TXB0CTRL_REGISTER = 0x30;
-
-    mcp2515_writeByte(mcp2515, TXB0SIDH_REGISTER, 0);
-    mcp2515_writeByte(mcp2515, TXB0SIDL_REGISTER, 0);
-    mcp2515_writeByte(mcp2515, TXB0DLC_REGISTER, 0);
+    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0CTRL_REGISTER));
+    mcp2515_writeByte(mcp2515, TXB0SIDH_REGISTER, 0b10000000);
+    mcp2515_writeByte(mcp2515, TXB0SIDL_REGISTER, 0b00000000);
+    mcp2515_writeByte(mcp2515, TXB0DLC_REGISTER, 1);
     mcp2515_writeByte(mcp2515, TXB0D0_REGISTER, data);
-    mcp2515_writeByte(mcp2515, TXB0CTRL_REGISTER, 0b00001000);
-    return mcp2515_readByte(mcp2515, TXB0CTRL_REGISTER);
+    sleep_ms(100);
+    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0SIDH_REGISTER));
+    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0SIDL_REGISTER));
+    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0DLC_REGISTER));
+    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0D0_REGISTER));
+    print_binary_8bit(mcp2515_readByte(mcp2515, TXB0CTRL_REGISTER));
+    sleep_ms(100);
+    mcp2515_writeByte(mcp2515, TXB0CTRL_REGISTER, 0b00001011);
+
+}
+
+
+static uint8_t mcp2515_recieveMessage(Mcp2515* mcp2515) {
+
+    const uint8_t RXB0D0_REGISTER = 0b01100110;
+    const uint8_t RXB1D0_REGISTER = 0b01100111;
+
+    return mcp2515_readByte(mcp2515, RXB1D0_REGISTER);
 }
 
 
@@ -195,22 +258,18 @@ int main() {
     gpio_put(PIN_CS_B, 1);
 
     Mcp2515 canA;
-    mcp2515_init(&canA, PIN_CS_A);
-    Mcp2515 canB;
-    mcp2515_init(&canA, PIN_CS_B);
+    mcp2515_init(&canA, PIN_CS_A, 10);
+    //Mcp2515 canB;
+    //mcp2515_init(&canB, PIN_CS_B, 10);
     
 
     while (1) {
+        mcp2515_init(&canA, PIN_CS_A, 100);
+        mcp2515_sendMessage(&canA, 0xBB);
+        //printf("%02X\n", mcp2515_recieveMessage(&canB));
+        
 
-//-------------------------------------------------------------------------------------
-        uint8_t status = mcp2515_readStatus(&canA);
-//-------------------------------------------------------------------------------------
-
-        //printf("%02X\n", status);
-
-        printf("%02X\n", mcp2515_sendMessage(&canA, 0xBB));
-
-        sleep_ms(100);
+        sleep_ms(1000);
     }
 
     return 0;
