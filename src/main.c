@@ -77,28 +77,6 @@ typedef struct Mcp2515 {
 
 
 
-
-
-static uint8_t mcp2515_readStatus(Mcp2515* mcp2515) {
-    // get content of status register
-    //
-    // MISO  1 0 1 0 0 0 0 0 _______________
-    // MOSI  _______________ n n n n n n n n
-    //      |<-instruction->|<----data----->|
-
-    const uint8_t READ_STATUS_INSTRUCTION = 0b10100000;
-    uint8_t recieveBuffer = 0xAA;
-
-    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
-    spi_write_blocking(SPI_PORT, &READ_STATUS_INSTRUCTION, 1);
-    spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
-    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
-
-    return recieveBuffer;
-}
-
-
-
 static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
     // write one byte of data to a register
     //
@@ -117,7 +95,8 @@ static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
 
 
 
-static void mcp2515_bitModify(Mcp2515* mcp2515, uint8_t address, uint8_t mask, uint8_t data) {
+static void mcp2515_bitModify(Mcp2515* mcp2515, uint8_t address, 
+                              uint8_t mask, uint8_t data) {
     // write one byte of data to a register
     //
     // MISO  0 0 0 0 0 0 1 0 n n n n n n n n n n n n n n n n n n n n n n n n
@@ -175,6 +154,36 @@ static void mcp2515_reset(Mcp2515* mcp2515) {
 }
 
 
+
+
+static void mcp2515_requestToSend(Mcp2515* mcp2515, uint8_t bufferNum) {
+    // get content of status register
+    //
+    // MISO  1 0 0 0 0 n n n 
+    // MOSI  _______________ 
+    //      |<-instruction->|
+    //                 | | |
+    //                 | | Request-to-Send for TXBO
+    //                 | Request-to-Send for TXB1
+    //                 Request-to-Send for TXB2
+
+    uint8_t requestToSendInstruction= 0;
+    switch (bufferNum) {
+        case 0: requestToSendInstruction = 0b10000001; break;
+        case 1: requestToSendInstruction = 0b10000010; break;
+        case 2: requestToSendInstruction = 0b10000100; break;
+        default: printf("buffer does not exist");
+    }
+
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
+    spi_write_blocking(SPI_PORT, &requestToSendInstruction, 1);
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
+}
+
+
+
+
+
 void mcp2515_init(Mcp2515* mcp2515, uint pinCs, uint baudrate) {
 
     // Assign chip select pin.
@@ -224,10 +233,10 @@ void mcp2515_init(Mcp2515* mcp2515, uint pinCs, uint baudrate) {
 
 
 static void mcp2515_loadTxBuffer(Mcp2515* mcp2515, uint8_t bufferNum, uint16_t canId,
-                                 uint8_t isRTS, uint8_t length, uint8_t* data) {
+                                 uint8_t isRTS, uint8_t length, uint8_t* data_ptr) {
     // MISO  0 1 0 0 0 a b c n n n n n n n n n n n n n n
     // MOSI  _________ _____ _______________ ___________
-    //      |<-instr->|<adr>|<----data----->|<----data--
+    //      |<-instr->|<adr>|<----data----->|<----data--...
 
     uint8_t instruction;
     switch (bufferNum) {
@@ -242,6 +251,7 @@ static void mcp2515_loadTxBuffer(Mcp2515* mcp2515, uint8_t bufferNum, uint16_t c
     uint8_t rxbneid0Content = 1; // TODO implement extended Id 
     uint8_t txbndlcContent = (isRTS << 6) | (length & 0b00001111);
 
+    // Consecutive write to transmit registers.
     gpio_put(mcp2515->pinCs, 0);  // chip select, active low
     spi_write_blocking(SPI_PORT, &instruction, 1);
     spi_write_blocking(SPI_PORT, &txbnsidhContent, 1);
@@ -249,10 +259,35 @@ static void mcp2515_loadTxBuffer(Mcp2515* mcp2515, uint8_t bufferNum, uint16_t c
     spi_write_blocking(SPI_PORT, &rxbneid8Content, 1);
     spi_write_blocking(SPI_PORT, &rxbneid0Content, 1);
     spi_write_blocking(SPI_PORT, &txbndlcContent, 1);
-    for (int i=0; i<length; i++){
-        spi_write_blocking(SPI_PORT, &data[i], 1);
-    }
+    spi_write_blocking(SPI_PORT, data_ptr, length);
     gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
+}
+
+
+
+static uint8_t mcp2515_readStatus(Mcp2515* mcp2515) {
+    // MISO  1 0 1 0 0 0 0 0 _______________ _______________
+    // MOSI  _______________ n n n n n n n n n n n n n n n n
+    //      |<-instruction->|<----data----->|<-repeat-data->|
+    //                       | | | | | | | |
+    //                       | | | | | | | RX0IF (CANINTF[0])
+    //                       | | | | | | RX1IF (CANINTF[1])
+    //                       | | | | | TXREQ (TXB0CNTRL[3])
+    //                       | | | | TX0IF (CANINTF[2])
+    //                       | | | TXREQ (TXB1CNTRL[3])
+    //                       | | TX1IF (CANINTF[3])
+    //                       | TXREQ (TXB2CNTRL[3])
+    //                       TX2IF (CANINTF[4]
+
+    const uint8_t READ_STATUS_INSTRUCTION = 0b10100000;
+    uint8_t recieveBuffer = 0;
+
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
+    spi_write_blocking(SPI_PORT, &READ_STATUS_INSTRUCTION, 1);
+    spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
+    
+    return recieveBuffer;
 }
 
 
@@ -265,7 +300,7 @@ static void mcp2515_sendMessage(Mcp2515* mcp2515, uint16_t canId, uint8_t isRTS,
     mcp2515_loadTxBuffer(mcp2515, bufferNum, canId, isRTS, length, data);
 
     // Set Transmit request flag
-    mcp2515_bitModify(mcp2515, TXB0CTRL_REGISTER, 1<<TXREQ_FLAG, 1<<TXREQ_FLAG);
+    mcp2515_requestToSend(mcp2515, bufferNum);
 }
 
 
