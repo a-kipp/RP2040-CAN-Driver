@@ -78,24 +78,29 @@ typedef struct Mcp2515 {
 
 
 
-static void mcp2515_reset(Mcp2515* mcp2515) {
-    //
-    // MISO  1 1 0 0 0 0 0 0 
-    // MOSI  _______________ 
-    //      |<-instruction->|
 
-    const uint8_t RESET_INSTRUCTION = 0b11000000;
+static uint8_t mcp2515_readStatus(Mcp2515* mcp2515) {
+    // get content of status register
+    //
+    // MISO  1 0 1 0 0 0 0 0 _______________
+    // MOSI  _______________ n n n n n n n n
+    //      |<-instruction->|<----data----->|
+
+    const uint8_t READ_STATUS_INSTRUCTION = 0b10100000;
+    uint8_t recieveBuffer = 0xAA;
 
     gpio_put(mcp2515->pinCs, 0);  // chip select, active low
-    spi_write_blocking(SPI_PORT, &RESET_INSTRUCTION, 1);
+    spi_write_blocking(SPI_PORT, &READ_STATUS_INSTRUCTION, 1);
+    spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
     gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
-    sleep_ms(10);
+
+    return recieveBuffer;
 }
 
 
 
-
 static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
+    // write one byte of data to a register
     //
     // MISO  0 0 0 0 0 0 1 0 n n n n n n n n n n n n n n n n
     // MOSI  _______________ _______________ _______________
@@ -112,36 +117,19 @@ static void mcp2515_writeByte(Mcp2515* mcp2515, uint8_t address, uint8_t data) {
 
 
 
-
-static uint8_t mcp2515_requestToSend(Mcp2515* mcp2515, uint8_t bufferNum) {
+static void mcp2515_bitModify(Mcp2515* mcp2515, uint8_t address, uint8_t bit, uint8_t data) {
+    // write one byte of data to a register
     //
-    // MISO  1 0 1 0 0 n n n 
-    // MOSI  _________ _____ 
-    //      |<-instr->|<dat>|
-
-    const uint8_t RTS_INSTRUCTION = 0b10100000;
-
-    uint8_t transmitByte = bufferNum & 0b00000111 | RTS_INSTRUCTION;
-
-    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
-    spi_write_blocking(SPI_PORT, &transmitByte, 1);
-    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
-}
-
-
-
-
-static void mcp2515_bitModify(Mcp2515* mcp2515, uint8_t address, 
-                              uint8_t mask, uint8_t data) {
-    //
-    // MISO  0 0 0 0 0 1 0 1 n n n n n n n n n n n n n n n n n n n n n n n n
+    // MISO  0 0 0 0 0 0 1 0 n n n n n n n n n n n n n n n n n n n n n n n n
     // MOSI  _______________ _______________ _______________ _______________
     //      |<-instruction->|<---address--->|<----mask----->|<----data----->|
 
-    const uint8_t BIT_MODIFY_INSTRUCTION = 0b00000101;
+    const uint8_t BYTE_WRITE_INSTRUCTION = 0b00000010;
+
+    uint8_t mask = 1<<bit;
 
     gpio_put(mcp2515->pinCs, 0);  // chip select, active low
-    spi_write_blocking(SPI_PORT, &BIT_MODIFY_INSTRUCTION, 1);
+    spi_write_blocking(SPI_PORT, &BYTE_WRITE_INSTRUCTION, 1);
     spi_write_blocking(SPI_PORT, &address, 1);
     spi_write_blocking(SPI_PORT, &mask, 1);
     spi_write_blocking(SPI_PORT, &data, 1);
@@ -152,6 +140,7 @@ static void mcp2515_bitModify(Mcp2515* mcp2515, uint8_t address,
 
 
 static uint8_t mcp2515_readByte(Mcp2515* mcp2515, uint8_t address) {
+    // write one byte of data to a register
     //
     // MISO  0 0 0 0 0 0 1 1 n n n n n n n n _______________
     // MOSI  _______________ _______________ n n n n n n n n
@@ -172,16 +161,20 @@ static uint8_t mcp2515_readByte(Mcp2515* mcp2515, uint8_t address) {
 
 
 
-# define NORMAL_MODE        0b00000000
-# define SLEEP_MODE         0b00100000
-# define LOOPBACK_MODE      0b01000000
-# define LISTEN_ONLY_MODE   0b01100000
-# define CONFIGURATION_MODE 0b10000000
+static void mcp2515_reset(Mcp2515* mcp2515) {
+    // get content of status register
+    //
+    // MISO  1 1 0 0 0 0 0 0 
+    // MOSI  _______________ 
+    //      |<-instruction->|
 
-static void mcp2515_setOpmode(Mcp2515* mcp2515, uint8_t opmode) {
-    mcp2515_bitModify(mcp2515, CANSTAT_REGISTER, 0b11100000, opmode);
+    const uint8_t RESET_INSTRUCTION = 0b11000000;
+
+    gpio_put(mcp2515->pinCs, 0);  // chip select, active low
+    spi_write_blocking(SPI_PORT, &RESET_INSTRUCTION, 1);
+    gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
+    sleep_ms(10);
 }
-
 
 
 void mcp2515_init(Mcp2515* mcp2515, uint pinCs, uint baudrate) {
@@ -210,30 +203,22 @@ void mcp2515_init(Mcp2515* mcp2515, uint pinCs, uint baudrate) {
     mcp2515_writeByte(mcp2515, CNF2_REGISTER, cnf2);
     mcp2515_writeByte(mcp2515, CNF1_REGISTER, cnf1);
 
-    // disable clockout on start of frame
-    mcp2515_bitModify(mcp2515, CNF3_REGISTER, 1<<SOF_BIT, 0);
-
-    // Setup interrupt control register
+    // Setup interrupt control register CANINTE
     mcp2515_writeByte(mcp2515, CANINTE_REGISTER, 0); // no interrupts used currently
 
     // Deactivate RXnBF Pins (High Impedance State).
-    //mcp2515_writeByte(mcp2515, BFPCTRL_REGISTER, 0);
+    mcp2515_writeByte(mcp2515, BFPCTRL_REGISTER, 0);
 
     // Controller has seperate pins for triggering a message transmission, not used.
     mcp2515_writeByte(mcp2515, TXRTSCTRL_REGISTER, 0);
+
+    // Set controller to normal mode and activate clockout
+    mcp2515_writeByte(mcp2515, CANCTRL_REGISTER, 0b00000100);
 
     // test if controller is accesable by reading from previously written registers.
     if (cnf1 != mcp2515_readByte(mcp2515, CNF1_REGISTER)) {
         printf("controller is not accesable\n");
     };
-
-    // Set controller to normal mode.
-    mcp2515_setOpmode(mcp2515, NORMAL_MODE);
-
-    // Wait till controller is in normal mode
-    while(mcp2515_readByte(mcp2515, CANSTAT_REGISTER) & 0b11100000 != 0b0000000 & 0b11100000);
-
-
     print_binary_8bit(cnf3);
     print_binary_8bit(mcp2515_readByte(mcp2515, CNF1_REGISTER));
 }
@@ -253,12 +238,11 @@ static void mcp2515_sendMessage(Mcp2515* mcp2515, uint8_t data) {
     mcp2515_writeByte(mcp2515, TXB0D0_REGISTER, data);
 
     // Set Transmit request flag
-    mcp2515_writeByte(mcp2515, TXB0CTRL_REGISTER, 1<<TXREQ_FLAG);
+    mcp2515_bitModify(mcp2515, TXB0CTRL_REGISTER, TXREQ_FLAG, 1);
 }
 
 
 static uint8_t mcp2515_recieveMessage(Mcp2515* mcp2515) {
-
     return mcp2515_readByte(mcp2515, RXB1D0_REGISTER);
 }
 
@@ -291,19 +275,19 @@ int main() {
     gpio_put(PIN_CS_B, 1);
 
     Mcp2515 canA;
-    mcp2515_init(&canA, PIN_CS_A, 500);
-
-    Mcp2515 canB;
-    mcp2515_init(&canB, PIN_CS_B, 500);
-    mcp2515_setOpmode(&canB, LISTEN_ONLY_MODE);
+    mcp2515_init(&canA, PIN_CS_A, 100);
+    //Mcp2515 canB;
+    //mcp2515_init(&canB, PIN_CS_B, 10);
     
 
     while (1) {
+        //mcp2515_init(&canA, PIN_CS_A, 100);
         mcp2515_sendMessage(&canA, 0xBB);
-        printf("%02X\n", mcp2515_recieveMessage(&canB));
+        //printf("%02X\n", mcp2515_recieveMessage(&canB));
         
 
         sleep_ms(1000);
+        print_binary_8bit(mcp2515_readByte(&canA, TXB0CTRL_REGISTER));
     }
 
     return 0;
