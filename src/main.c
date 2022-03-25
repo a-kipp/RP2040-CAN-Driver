@@ -225,21 +225,21 @@ void mcp2515_init(Mcp2515* mcp2515, uint pinCs, uint baudrate) {
 
 static void mcp2515_loadTxBuffer(Mcp2515* mcp2515, uint8_t bufferNum, uint16_t canId,
                                  uint8_t isRTS, uint8_t length, uint8_t* data) {
-    // MISO  1 1 0 0 0 a b c n n n n n n n n n n n n n n
+    // MISO  0 1 0 0 0 a b c n n n n n n n n n n n n n n
     // MOSI  _________ _____ _______________ ___________
     //      |<-instr->|<adr>|<----data----->|<----data--
 
     uint8_t instruction;
     switch (bufferNum) {
-        case 0: instruction = 0b11000000; break;
-        case 1: instruction = 0b11000010; break;
-        case 2: instruction = 0b11000100; break;
+        case 0: instruction = 0b01000000; break;
+        case 1: instruction = 0b01000010; break;
+        case 2: instruction = 0b01000100; break;
         default: printf("buffer doesn't exist");
     }
     uint8_t txbnsidhContent = canId >> 4;
     uint8_t txbnsidlContent = canId << 4;
-    uint8_t rxbneid8Content = 0; // TODO implement extended Id 
-    uint8_t rxbneid0Content = 0; // TODO implement extended Id 
+    uint8_t rxbneid8Content = 254; // TODO implement extended Id 
+    uint8_t rxbneid0Content = 1; // TODO implement extended Id 
     uint8_t txbndlcContent = (isRTS << 6) | (length & 0b00001111);
 
     gpio_put(mcp2515->pinCs, 0);  // chip select, active low
@@ -253,24 +253,6 @@ static void mcp2515_loadTxBuffer(Mcp2515* mcp2515, uint8_t bufferNum, uint16_t c
         spi_write_blocking(SPI_PORT, &data[i], 1);
     }
     gpio_put(mcp2515->pinCs, 1);  // chip deselect, active low
-}
-
-
-
-static void mcp2515_sendMessage_old(Mcp2515* mcp2515, uint8_t data, uint8_t length) {
-
-    // Load Registers with 11 bit message identifier.
-    mcp2515_writeByte(mcp2515, TXB0SIDH_REGISTER, 0b10000000);
-    mcp2515_writeByte(mcp2515, TXB0SIDL_REGISTER, 0b00000000);
-
-    // Set length of data, maximum is 8 Byte.
-    mcp2515_writeByte(mcp2515, TXB0DLC_REGISTER, 1);
-
-    // Load Data to transmit registers
-    mcp2515_writeByte(mcp2515, TXB0D0_REGISTER, data);
-
-    // Set Transmit request flag
-    mcp2515_bitModify(mcp2515, TXB0CTRL_REGISTER, 1<<TXREQ_FLAG, 1<<TXREQ_FLAG);
 }
 
 
@@ -341,8 +323,8 @@ int main() {
 
     while (1) {
         dataToTransmit[0] = 6;
-        mcp2515_sendMessage(&canA, 2048, false, 1, dataToTransmit);
-        sleep_ms(1000);
+        mcp2515_sendMessage(&canA, 0, false, 2, dataToTransmit);
+        sleep_ms(500);
     }
 
     return 0;
