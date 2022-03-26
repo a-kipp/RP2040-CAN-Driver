@@ -163,19 +163,11 @@ static void mcp2515_requestToSend(Mcp2515 *mcp2515, uint8_t bufferNum) {
     //                 Request-to-Send for TXB2
 
     uint8_t requestToSendInstruction = 0;
-    switch (bufferNum)
-    {
-    case 0:
-        requestToSendInstruction = 0b10000001;
-        break;
-    case 1:
-        requestToSendInstruction = 0b10000010;
-        break;
-    case 2:
-        requestToSendInstruction = 0b10000100;
-        break;
-    default:
-        printf("buffer does not exist");
+    switch (bufferNum) {
+        case 0: requestToSendInstruction = 0b10000001; break;
+        case 1: requestToSendInstruction = 0b10000010; break;
+        case 2: requestToSendInstruction = 0b10000100; break;
+        default: printf("buffer does not exist");
     }
 
     gpio_put(mcp2515->pinCs, 0); // chip select, active low
