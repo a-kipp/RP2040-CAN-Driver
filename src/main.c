@@ -74,6 +74,7 @@ typedef struct Mcp2515 {
     uint pinCs;
     uint pinSck;
     uint pinMosi;
+    uint lastMessagePulledFromBuff;
     spi_inst_t *spiPort;
 } Mcp2515;
 
@@ -268,17 +269,10 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, uint16_t c
 
     uint8_t instruction;
     switch (bufferNum) {
-    case 0:
-        instruction = 0b01000000;
-        break;
-    case 1:
-        instruction = 0b01000010;
-        break;
-    case 2:
-        instruction = 0b01000100;
-        break;
-    default:
-        printf("buffer doesn't exist");
+        case 0: instruction = 0b01000000; break;
+        case 1: instruction = 0b01000010; break;
+        case 2: instruction = 0b01000100; break;
+        default: printf("buffer doesn't exist");
     }
     uint8_t txbnsidhContent = canId >> 4;
     uint8_t txbnsidlContent = canId << 4;
@@ -329,6 +323,47 @@ static uint8_t mcp2515_readStatus(Mcp2515 *mcp2515) {
 
 
 
+static uint8_t mcp2515_rxStatus(Mcp2515 *mcp2515) {
+    // MISO  1 0 1 1 0 0 0 0 _______________ _______________
+    // MOSI  _______________ n n n n n n n n n n n n n n n n
+    //      |<-instruction->|<----data----->|<-repeat-data->|
+    //                       | |   | | | | |
+    //                       | |   | | Filter Match
+    //                       | |   | | 0 0 0 RXF0
+    //                       | |   | | 0 0 1 RXF1
+    //                       | |   | | 0 1 0 RXF2
+    //                       | |   | | 0 1 1 RXF3
+    //                       | |   | | 1 0 0 RXF4
+    //                       | |   | | 1 0 1 RXF5
+    //                       | |   | | 1 1 0 RXF0 (rollover to RXB1)
+    //                       | |   | | 1 1 1 RXF1 (rollover to RXB1)
+    //                       | |   | |
+    //                       | |   Received Message Type
+    //                       | |   0 0 Standard data frame
+    //                       | |   0 1 Standard remote frame
+    //                       | |   1 0 Extended data frame
+    //                       | |   1 1 Extended remote frame
+    //                       | |
+    //                       Received Message
+    //                       0 0 No RX message
+    //                       0 1 Message in RXB0
+    //                       1 0 Message in RXB1
+    //                       1 1 Messages in both buffers*
+
+    const uint8_t RX_STATUS_INSTRUCTION = 0b10110000;
+    uint8_t recieveBuffer = 0;
+
+    gpio_put(mcp2515->pinCs, 0); // chip select, active low
+    spi_write_blocking(SPI_PORT, &RX_STATUS_INSTRUCTION, 1);
+    spi_read_blocking(SPI_PORT, 0, &recieveBuffer, 1);
+    gpio_put(mcp2515->pinCs, 1); // chip deselect, active low
+
+    return recieveBuffer;
+}
+
+
+
+
 static void mcp2515_sendMessage(Mcp2515 *mcp2515, uint16_t canId, uint8_t isRTS,
                                 uint8_t length, uint8_t *data) {
 
@@ -350,6 +385,7 @@ static void mcp2515_sendMessage(Mcp2515 *mcp2515, uint16_t canId, uint8_t isRTS,
         } else if (!isBuf0loaded) {
            bufferNum = 0;
         }
+        // TOD0 put a sleep here if an RTOS is used
     }
 
     // Load all transmit related buffers at once.
@@ -362,10 +398,86 @@ static void mcp2515_sendMessage(Mcp2515 *mcp2515, uint16_t canId, uint8_t isRTS,
 
 
 
-static uint8_t mcp2515_recieveMessage(Mcp2515 *mcp2515)
-{
-    return mcp2515_readByte(mcp2515, RXB1D0_REGISTER);
+typedef struct CanFrame {
+    uint16_t canId;
+    uint8_t isRTS;
+    uint8_t length;
+    uint8_t data[8];
+} CanFrame;
+
+
+static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanFrame* frame) {
+    // MISO  1 0 0 1 0 n m 0 _______________ ___________
+    // MOSI  _______________ n n n n n n n n n n n n n n
+    //      |<-instruction->|<----data----->|<----data--...
+
+    uint8_t instruction;
+    switch (bufferNum) {
+        case 0: instruction = 0b10010000; break;
+        case 1: instruction = 0b10010100; break;
+        default: printf("buffer doesn't exist");
+    }
+
+    uint8_t rxbnsidhContent;
+    uint8_t rxbnsidlContent;
+    uint8_t rxbneid8Content; // TODO implement extended Id
+    uint8_t rxbneid0Content;   // TODO implement extended Id
+    uint8_t rxbndlcContent;
+
+    // Consecutive write to transmit registers.
+    gpio_put(mcp2515->pinCs, 0); // chip select, active low
+    spi_write_blocking(SPI_PORT, &instruction, 1);
+    spi_read_blocking(SPI_PORT, 0, &rxbnsidhContent, 1);
+    spi_read_blocking(SPI_PORT, 0, &rxbnsidlContent, 1);
+    spi_read_blocking(SPI_PORT, 0, &rxbneid8Content, 1);
+    spi_read_blocking(SPI_PORT, 0, &rxbneid0Content, 1);
+    spi_read_blocking(SPI_PORT, 0, &rxbndlcContent, 1);
+    spi_read_blocking(SPI_PORT, 0, frame->data, 8);
+    gpio_put(mcp2515->pinCs, 1); // chip deselect, active low
+
+    frame->canId = 0;
+    frame->canId += (uint16_t)rxbnsidhContent << 4;
+    frame->canId += (uint16_t)rxbnsidlContent >> 4;
+    
+    frame->isRTS = (rxbndlcContent & 0b01000000) >> 6;
+
+    frame->length = rxbndlcContent & 0b00001111;
 }
+
+
+
+static bool mcp2515_recieveMessage(Mcp2515* mcp2515, CanFrame* frame) {
+
+    bool isMessageInBuffer = true;
+    
+    uint8_t status = mcp2515_rxStatus(mcp2515);
+
+    uint8_t isRxBuf0Full = status & 0b01000000;
+    uint8_t isRxBuf1Full = status & 0b10000000;
+
+    if(mcp2515->lastMessagePulledFromBuff = 1) {
+        if(isRxBuf0Full) {
+            mcp2515_readRxBuffer(mcp2515, 0, frame);
+        } else if(isRxBuf1Full) {
+            mcp2515_readRxBuffer(mcp2515, 1, frame);
+        } else {
+            isMessageInBuffer = false;
+        }
+    } else {
+        if(isRxBuf1Full) {
+            mcp2515_readRxBuffer(mcp2515, 1, frame);
+        } else if(isRxBuf0Full)  {
+            mcp2515_readRxBuffer(mcp2515, 0, frame);
+        } else {
+            isMessageInBuffer = false;
+        }
+    }
+
+    return isMessageInBuffer;
+}
+
+
+
 
 #define NORMAL_MODE 0b00000000
 #define SLEEP_MODE 0b00100000
@@ -380,8 +492,7 @@ static void mcp2515_setOpmode(Mcp2515 *mcp2515, uint8_t opmode)
 
 //-------------------------------------------------------------------------------------
 
-int main()
-{
+int main(){
     stdio_init_all();
 
     printf("Hello, MPU9250! Reading raw data from registers via SPI...\n");
@@ -408,12 +519,15 @@ int main()
     Mcp2515 canB;
     mcp2515_init(&canB, PIN_CS_B, 100);
 
-    uint8_t dataToTransmit[8] = {0};
+    uint8_t transmitBuffer[8] = {0};
+    CanFrame frameBuffer = {0};
 
     while (1)
     {
-        dataToTransmit[0] = 6;
-        mcp2515_sendMessage(&canA, 0, false, 2, dataToTransmit);
+        transmitBuffer[0] = 220;
+        mcp2515_sendMessage(&canA, 0, false, 2, transmitBuffer);
+        mcp2515_recieveMessage(&canB, &frameBuffer);
+        printf("%d\n", frameBuffer.length);
         sleep_ms(500);
     }
 

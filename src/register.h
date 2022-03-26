@@ -52,7 +52,7 @@
 #define EFLG_REGISTER      0x2D
     
     
-// Transmit Control Registers
+// Transmit Registers
 #define TXB0CTRL_REGISTER  0x30 //TRANSMIT BUFFER 0 CONTROL REGISTER
     #define ABTF_FLAG      6 // Message Aborted
     #define MLOA_FLAG      5 // Message Lost Arbitration
@@ -118,7 +118,7 @@
 #define TXB2D7_REGISTER    0x5D
 
 
-// Recieve Control Registers
+// Recieve Registers
 #define RXB0CTRL_REGISTER  0x60
 #define RXB0SIDH_REGISTER  0x61
 #define RXB0SIDL_REGISTER  0x62
