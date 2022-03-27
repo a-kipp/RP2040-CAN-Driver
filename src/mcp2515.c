@@ -34,8 +34,10 @@ typedef struct Mcp2515 {
 
 
 typedef struct CanMessage {
-    uint16_t canId;
-    uint8_t isRTS;
+    uint16_t canStandardId;
+    bool extendedIdEnabled;
+    uint32_t extendedId;
+    bool isRTS;
     uint8_t length;
     uint8_t data[8];
 } CanMessage;
@@ -110,10 +112,32 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     spi_read_blocking(mcp2515->_spiPort, 0, frame->data, 8);
     gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 
-    frame->canId = (uint16_t)rxbnsidhContent << 4;
-    frame->canId += (uint16_t)rxbnsidlContent >> 4;
+    frame->canStandardId = (uint16_t)rxbnsidhContent << 4;
+    frame->canStandardId += (uint16_t)rxbnsidlContent >> 4;
+
+    if (rxbnsidlContent & 0b00001000) {
+        frame->extendedIdEnabled = true;
+    } else {
+        frame->extendedIdEnabled = false;
+    }
+
+    frame->extendedId = (uint32_t)rxbnsidlContent<<16;
+    frame->extendedId |= (uint32_t)rxbneid8Content<<8;
+    frame->extendedId |= (uint32_t)rxbneid8Content;
     
-    frame->isRTS = (rxbndlcContent & 0b01000000) >> 6;
+    if (frame->extendedIdEnabled) {
+        if (rxbndlcContent & 0b01000000) {
+            frame->isRTS = true;
+        } else {
+            frame->isRTS = false;
+        }
+    } else {
+        if (rxbnsidlContent & 0b00010000) {
+            frame->isRTS = true;
+        } else {
+            frame->isRTS = false;
+        }
+    }
 
     frame->length = rxbndlcContent & 0b00001111;
 }
@@ -148,11 +172,18 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         case 2: instruction = 0b01000100; break;
         default: printf("buffer doesn't exist");
     }
-    uint8_t txbnsidhContent = frame->canId >> 4;
-    uint8_t txbnsidlContent = frame->canId << 4;
-    uint8_t rxbneid8Content = 254; // TODO implement extended Id
-    uint8_t rxbneid0Content = 1;   // TODO implement extended Id
-    uint8_t txbndlcContent = (frame->isRTS << 6) | (frame->length & 0b00001111);
+    uint8_t txbnsidhContent = frame->canStandardId >> 4;
+    uint8_t txbnsidlContent = frame->canStandardId << 4;
+    if (frame->extendedIdEnabled) {
+        txbnsidlContent |= 0b00001000;
+    } else {
+        txbnsidlContent &= ~0b00001000;
+    }
+    txbnsidlContent |= frame->extendedId >> 16;
+    uint8_t rxbneid8Content = frame->extendedId >> 8;
+    uint8_t rxbneid0Content = frame->extendedId ;
+    uint8_t txbndlcContent = frame->isRTS & 0b01000000;
+    txbndlcContent |= frame->length & 0b00001111;
 
     // Consecutive write to transmit registers.
     gpio_put(mcp2515->_pinCs, 0); // chip select, active low
@@ -357,7 +388,7 @@ void mcp2515_init(Mcp2515 *mcp2515, uint pinCs, uint baudrate, spi_inst_t* spiPo
 
 
 // Try to send out a message, if message can not be transmitted return false.
-bool mcp2515_TrySendMessage(Mcp2515 *mcp2515, CanMessage* frame) {
+bool mcp2515_TrySendMessage(Mcp2515 *mcp2515, CanMessage* message) {
 
     // if all buffers were loaded we wait till all buffers are empty again to
     // preserve order of transmissions. The buffer with the highest number is
@@ -382,7 +413,7 @@ bool mcp2515_TrySendMessage(Mcp2515 *mcp2515, CanMessage* frame) {
         return isMessageSendOut = false;
     } else {
         // Load all transmit related buffers at once.
-        mcp2515_loadTxBuffer(mcp2515, bufferNum, frame);
+        mcp2515_loadTxBuffer(mcp2515, bufferNum, message);
 
         // Set Transmit request flag.
         mcp2515_requestToSend(mcp2515, bufferNum);
@@ -394,12 +425,12 @@ bool mcp2515_TrySendMessage(Mcp2515 *mcp2515, CanMessage* frame) {
 
 
 // Send out a message, block till message has been send out.
-void mcp2515_sendMessageBlocking(Mcp2515 *mcp2515, CanMessage* frame) {
+void mcp2515_sendMessageBlocking(Mcp2515 *mcp2515, CanMessage* message) {
 
     bool isMessageSendOut = false;
 
     while (!isMessageSendOut) {
-        isMessageSendOut = mcp2515_TrySendMessage(mcp2515, frame);
+        isMessageSendOut = mcp2515_TrySendMessage(mcp2515, message);
     }
 }
 

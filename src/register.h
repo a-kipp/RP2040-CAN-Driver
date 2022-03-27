@@ -76,8 +76,8 @@
     #define EXIDE          3 // Extended Identifier Enable bit
     #define EID17          1 // Extended Identifier bits
     #define EID16          0 //
-#define TXB0EID8           0x33 // TRANSMIT BUFFER n EXTENDED IDENTIFIER 8 REGISTER HIGH
-#define TXB0EID0           0x34 // TRANSMIT BUFFER n EXTENDED IDENTIFIER 0 REGISTER LOW
+#define TXB0EID8           0x33 // EXTENDED IDENTIFIER 8 REGISTER HIGH
+#define TXB0EID0           0x34 // EXTENDED IDENTIFIER 0 REGISTER LOW
 #define TXB0DLC_REGISTER   0x35 // DATA LENGTH CODE REGISTER
     #define RTR_BIT        6 // Remote Transmission Request bit
     #define DLC3_BIT       3 // Data Length Code bits
@@ -144,14 +144,19 @@
 #define RXB0SIDL_REGISTER  0x62 // RECEIVE BUFFER 0 STANDARD IDENTIFIER REGISTER LOW
     #define SID2_BIT       7 // Standard Identifier bits
     #define SID1_BIT       6 //
-    #define SID0_BIT       5 //
-    #define SRR_BIT        4 // Standard Identifier bits
+    #define SID0_BIT       5 // 
+    #define SRR_BIT        4 // Standard Frame Remote Transmit Request bit (valid only if IDE bit = 0)
     #define IDE_BIT        3 // Extended Identifier Flag bit
     #define EID17          1 // Extended Identifier bits
     #define EID16          0 //
 #define RXB0EID8_REGISTER  0x63 // RECEIVE BUFFER 0 EXTENDED IDENTIFIER REGISTER HIGH
 #define RXB0EID0_REGISTER  0x64 // RECEIVE BUFFER 0 EXTENDED IDENTIFIER REGISTER LOW
 #define RXB0DLC_REGISTER   0x65 // RECEIVE BUFFER 0 DATA LENGTH CODE REGISTER
+    #define RTR_BIT        6 // Extended Frame Remote Transmission Request bit (valid only when IDE (RXBnSIDL[3]) = 1)    
+    #define DLC3           3 // Data Length Code bits
+    #define DLC2           2 //
+    #define DLC1           1 //
+    #define DLC0           0 //
 #define RXB0D0_REGISTER    0x66 // RECEIVE BUFFER 0 DATA BYTE m REGISTER
 #define RXB0D1_REGISTER    0x67 //
 #define RXB0D2_REGISTER    0x68 //
