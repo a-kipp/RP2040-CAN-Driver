@@ -53,7 +53,7 @@
     
     
 // Transmit Registers
-#define TXB0CTRL_REGISTER  0x30 //TRANSMIT BUFFER 0 CONTROL REGISTER
+#define TXB0CTRL_REGISTER  0x30 // TRANSMIT BUFFER 0 CONTROL REGISTER
     #define ABTF_FLAG      6 // Message Aborted
     #define MLOA_FLAG      5 // Message Lost Arbitration
     #define TXERR_FLAG     4 // Transmission Error
@@ -61,21 +61,23 @@
     #define TXP1_BIT       1 // Transmit Buffer Priority 1
     #define TXP0_BIT       0 // Transmit Buffer Priority 0
 #define TXB0SIDH_REGISTER  0x31 // STANDARD IDENTIFIER REGISTER HIGH
-    #define SID10_BIT      7 // Standard Identifiier bits
-    #define SID9_BIT       6
-    #define SID8_BIT       5
-    #define SID7_BIT       4
-    #define SID6_BIT       3
-    #define SID5_BIT       2
-    #define SID4_BIT       1
-    #define SID3_BIT       0
+    #define SID10_BIT      7 // Standard Identifier bits
+    #define SID9_BIT       6 //
+    #define SID8_BIT       5 //
+    #define SID7_BIT       4 //
+    #define SID6_BIT       3 //
+    #define SID5_BIT       2 //
+    #define SID4_BIT       1 //
+    #define SID3_BIT       0 //
 #define TXB0SIDL_REGISTER  0x32 // STANDARD IDENTIFIER REGISTER LOW
-    #define SID2_BIT       7
-    #define SID1_BIT       6
-    #define SID0_BIT       5
+    #define SID2_BIT       7 // Standard Identifier bits
+    #define SID1_BIT       6 //
+    #define SID0_BIT       5 //
     #define EXIDE          3 // Extended Identifier Enable bit
-    #define EID17          1
-    #define EID16          0
+    #define EID17          1 // Extended Identifier bits
+    #define EID16          0 //
+#define TXB0EID8           0x33 // TRANSMIT BUFFER n EXTENDED IDENTIFIER 8 REGISTER HIGH
+#define TXB0EID0           0x34 // TRANSMIT BUFFER n EXTENDED IDENTIFIER 0 REGISTER LOW
 #define TXB0DLC_REGISTER   0x35 // DATA LENGTH CODE REGISTER
     #define RTR_BIT        6 // Remote Transmission Request bit
     #define DLC3_BIT       3 // Data Length Code bits
@@ -94,6 +96,8 @@
 #define TXB1CTRL_REGISTER  0x40
 #define TXB1SIDH_REGISTER  0x41
 #define TXB1SIDL_REGISTER  0x42
+#define TXB1EID8_REGISTER  0x43
+#define TXB1EID0_REGISTER  0x44
 #define TXB1DLC_REGISTER   0x45
 #define TXB1D0_REGISTER    0x46
 #define TXB1D1_REGISTER    0x47
@@ -107,6 +111,8 @@
 #define TXB2CTRL_REGISTER  0x50
 #define TXB2SIDH_REGISTER  0x51
 #define TXB2SIDL_REGISTER  0x52
+#define TXB2EID8_REGISTER  0x53
+#define TXB2EID0_REGISTER  0x54
 #define TXB2DLC_REGISTER   0x55
 #define TXB2D0_REGISTER    0x56
 #define TXB2D1_REGISTER    0x57
@@ -119,22 +125,53 @@
 
 
 // Recieve Registers
-#define RXB0CTRL_REGISTER  0x60
-#define RXB0SIDH_REGISTER  0x61
-#define RXB0SIDL_REGISTER  0x62
-#define RXB0DLC_REGISTER   0x65
-#define RXB0D0_REGISTER    0x66
-#define RXB0D1_REGISTER    0x67
-#define RXB0D2_REGISTER    0x68
-#define RXB0D3_REGISTER    0x69
-#define RXB0D4_REGISTER    0x6A
-#define RXB0D5_REGISTER    0x6B
-#define RXB0D6_REGISTER    0x6C
-#define RXB0D7_REGISTER    0x6D
+#define RXB0CTRL_REGISTER  0x60 // RECEIVE BUFFER 0 CONTROL REGISTER
+    #define RXM1           6 // Receive Buffer Operating mode bits
+    #define RXM0           5 //
+    #define RXRTR          3 // Received Remote Transfer Request bit
+    #define BUKT           2 // Rollover Enable bit
+    #define BUKT1          1 // Read-Only Copy of BUKT bit (used internally)
+    #define FILTH0         0 // Filter Hit bit (indicates which acceptance filter enabled reception of message)
+#define RXB0SIDH_REGISTER  0x61 // RECEIVE BUFFER n STANDARD IDENTIFIER REGISTER HIG
+    #define SID10_BIT      7 // Standard Identifier bits
+    #define SID9_BIT       6 //
+    #define SID8_BIT       5 //
+    #define SID7_BIT       4 //
+    #define SID6_BIT       3 //
+    #define SID5_BIT       2 //
+    #define SID4_BIT       1 //
+    #define SID3_BIT       0 //
+#define RXB0SIDL_REGISTER  0x62 // RECEIVE BUFFER 0 STANDARD IDENTIFIER REGISTER LOW
+    #define SID2_BIT       7 // Standard Identifier bits
+    #define SID1_BIT       6 //
+    #define SID0_BIT       5 //
+    #define SRR_BIT        4 // Standard Identifier bits
+    #define IDE_BIT        3 // Extended Identifier Flag bit
+    #define EID17          1 // Extended Identifier bits
+    #define EID16          0 //
+#define RXB0EID8_REGISTER  0x63 // RECEIVE BUFFER 0 EXTENDED IDENTIFIER REGISTER HIGH
+#define RXB0EID0_REGISTER  0x64 // RECEIVE BUFFER 0 EXTENDED IDENTIFIER REGISTER LOW
+#define RXB0DLC_REGISTER   0x65 // RECEIVE BUFFER 0 DATA LENGTH CODE REGISTER
+#define RXB0D0_REGISTER    0x66 // RECEIVE BUFFER 0 DATA BYTE m REGISTER
+#define RXB0D1_REGISTER    0x67 //
+#define RXB0D2_REGISTER    0x68 //
+#define RXB0D3_REGISTER    0x69 //
+#define RXB0D4_REGISTER    0x6A //
+#define RXB0D5_REGISTER    0x6B //
+#define RXB0D6_REGISTER    0x6C //
+#define RXB0D7_REGISTER    0x6D //
 
 #define RXB1CTRL_REGISTER  0x70
+    #define RXM1_BIT       6 // Receive Buffer Operating mode bits
+    #define RXM0_BIT       5 //
+    #define RXRTR_BIT      3 // Received Remote Transfer Request bit
+    #define FILTH2_BIT     2 // Filter Hit bits (indicates which acceptance filter enabled reception of message)
+    #define FILTH1_BIT     1 // 
+    #define FILTH0_BIT     0 // 
 #define RXB1SIDH_REGISTER  0x71
 #define RXB1SIDL_REGISTER  0x72
+#define RXB1EID8_REGISTER  0x63
+#define RXB1EID0_REGISTER  0x64
 #define RXB1DLC_REGISTER   0x75
 #define RXB1D0_REGISTER    0x76
 #define RXB1D1_REGISTER    0x77
