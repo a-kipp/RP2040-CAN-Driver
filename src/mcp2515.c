@@ -22,7 +22,7 @@
 #include <hardware/spi.h>
 #include "register.h"
 
-
+// RTS it not working
 
 
 typedef struct Mcp2515 {
@@ -97,8 +97,8 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
 
     uint8_t rxbnsidhContent;
     uint8_t rxbnsidlContent;
-    uint8_t rxbneid8Content; // TODO implement extended Id
-    uint8_t rxbneid0Content; // TODO implement extended Id
+    uint8_t rxbneid8Content;
+    uint8_t rxbneid0Content;
     uint8_t rxbndlcContent;
 
     // Consecutive write to transmit registers.
@@ -121,7 +121,7 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         frame->extendedIdEnabled = false;
     }
 
-    frame->extendedId = (uint32_t)rxbnsidlContent<<16;
+    frame->extendedId = ((uint32_t)rxbnsidlContent & 0b00000011)<<16;
     frame->extendedId |= (uint32_t)rxbneid8Content<<8;
     frame->extendedId |= (uint32_t)rxbneid8Content;
     
@@ -172,8 +172,8 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         case 2: instruction = 0b01000100; break;
         default: printf("buffer doesn't exist");
     }
-    uint8_t txbnsidhContent = frame->canStandardId >> 4;
-    uint8_t txbnsidlContent = frame->canStandardId << 4;
+    uint8_t txbnsidhContent = (uint8_t)(frame->canStandardId >> 4);
+    uint8_t txbnsidlContent = (uint8_t)(frame->canStandardId << 4);
     if (frame->extendedIdEnabled) {
         txbnsidlContent |= 0b00001000;
     } else {
@@ -342,7 +342,7 @@ void mcp2515_init(Mcp2515 *mcp2515, uint pinCs, uint baudrate, spi_inst_t* spiPo
     // Assign chip select pin.
     mcp2515->_pinCs = pinCs;
 
-
+    // Assign SPI port.
     mcp2515->_spiPort = spiPort;
 
     // Reset the controller. Controller is in configuration mode after reset.

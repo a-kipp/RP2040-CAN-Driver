@@ -69,7 +69,11 @@ int main(){
     CanMessage buffer = {0};
     buffer.length = 8;
     buffer.extendedIdEnabled = false;
-    buffer.extendedId = 666;
+    buffer.extendedId = 0b00000000000000111111111111111111;
+    buffer.canStandardId = 666;
+    buffer.isRTS = true;
+
+    CanMessage RecieveBuffer = {0};
 
     uint32_t* val_ptr = (uint32_t*)&buffer.data;
     *val_ptr = 0;
@@ -81,6 +85,8 @@ int main(){
     absolute_time_t timeStart = get_absolute_time();
     absolute_time_t timeStart1 = get_absolute_time();
 
+    uint32_t lastExtendedID = buffer.extendedId;
+
     int64_t delay;
 
     while (1)
@@ -88,7 +94,7 @@ int main(){
         *val_ptr = *val_ptr + 1;
         timeStart1 = get_absolute_time();
         mcp2515_sendMessageBlocking(&canA, &buffer);
-        mcp2515_recieveMessageBlocking(&canB, &buffer);
+        mcp2515_recieveMessageBlocking(&canB, &RecieveBuffer);
         delay = (delay + absolute_time_diff_us(timeStart1, get_absolute_time())) / 2;
         sleep_ms(10);
         if (lastVal + 1 != *val_ptr) {
@@ -102,6 +108,10 @@ int main(){
             printf("Errors %d    ", errors);
             printf("Delay %d us\n", (uint32_t)delay);
         }
+        if (lastExtendedID != buffer.extendedId) {
+            printf("kacki");
+        }
+        lastExtendedID = buffer.extendedId;
         transmittedMessages++;
     }
 
