@@ -371,7 +371,7 @@ void mcp2515_setOpmode(Mcp2515 *mcp2515, uint8_t desiredOpMode) {
 
 
 
-void mcp2515_init(Mcp2515 *mcp2515, uint pinCs, uint baudrate, spi_inst_t* spiPort) {
+bool mcp2515_init(Mcp2515 *mcp2515, uint pinCs, uint baudrate, spi_inst_t* spiPort) {
 
     // Assign chip select pin.
     mcp2515->_pinCs = pinCs;
@@ -396,6 +396,7 @@ void mcp2515_init(Mcp2515 *mcp2515, uint pinCs, uint baudrate, spi_inst_t* spiPo
         case 500000:  cnf3 = 0x03; cnf2 = 0xac; cnf3 = 0x80; break; 
         case 1000000: cnf3 = 0x00; cnf2 = 0xc0; cnf3 = 0x80; break;    
         default: printf("desired baudrate not avialable");
+        return false;
     }
     mcp2515_writeByte(mcp2515, CNF3_REGISTER, cnf3);
     mcp2515_writeByte(mcp2515, CNF2_REGISTER, cnf2);
@@ -413,10 +414,13 @@ void mcp2515_init(Mcp2515 *mcp2515, uint pinCs, uint baudrate, spi_inst_t* spiPo
     // test if controller is accesable by reading from previously written registers.
     if (cnf1 != mcp2515_readByte(mcp2515, CNF1_REGISTER)) {
         printf("controller is not accesable\n");
+        return false;
     };
 
     // Set controller to normal mode.
     mcp2515_setOpmode(mcp2515, LISTEN_ONLY_MODE);
+
+    return true;
 }
 
 
