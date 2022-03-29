@@ -1,19 +1,19 @@
 /*
-    A simple RP2040 library for the MCP2515.
-    Copyright (C) 2022 Andreas Kipping
+A simple MCP2515 library for the RP2040.
+Copyright (C) 2022 Andreas Kipping
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 
@@ -96,50 +96,64 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     }
 
     uint8_t rxbnsidhContent;
-    uint8_t rxbnsidlContent;
+
+    struct rxbnsidl {
+        uint8_t sidBits0to2 : 3;
+        uint8_t padding0 : 1;
+        uint8_t srrBit : 1;
+        uint8_t ideBit : 1;
+        uint8_t eidBits16to17 : 2;
+    };
+
+    struct rxbnsidl rxbnsidlContent = {0};
+
     uint8_t rxbneid8Content;
     uint8_t rxbneid0Content;
-    uint8_t rxbndlcContent;
+
+    struct rxbndlc {
+        uint8_t padding0 : 1;
+        uint8_t rtrBit : 1;
+        uint8_t padding1 : 2;
+        uint8_t dlcBits0to3 : 4;
+    };
+
+    struct rxbndlc rxbndlcContent = {0};    
 
     // Consecutive write to transmit registers.
     gpio_put(mcp2515->_pinCs, 0); // chip select, active low
     spi_write_blocking(mcp2515->_spiPort, &instruction, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbnsidhContent, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, &rxbnsidlContent, 1);
+    spi_read_blocking(mcp2515->_spiPort, 0, (uint8_t*)&rxbnsidlContent, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid8Content, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid0Content, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, &rxbndlcContent, 1);
+    spi_read_blocking(mcp2515->_spiPort, 0, (uint8_t*)&rxbndlcContent, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, frame->data, 8);
     gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 
     frame->canStandardId = (uint16_t)rxbnsidhContent << 4;
-    frame->canStandardId += (uint16_t)rxbnsidlContent >> 4;
+    frame->canStandardId += (uint16_t)rxbnsidlContent.sidBits0to2;
 
-    if (rxbnsidlContent & 0b00001000) {
-        frame->extendedIdEnabled = true;
-    } else {
-        frame->extendedIdEnabled = false;
-    }
+    frame->extendedIdEnabled = rxbnsidlContent.ideBit;
 
-    frame->extendedId = ((uint32_t)rxbnsidlContent & 0b00000011)<<16;
+    frame->extendedId = ((uint32_t)rxbnsidlContent.eidBits16to17)<<16;
     frame->extendedId |= (uint32_t)rxbneid8Content<<8;
     frame->extendedId |= (uint32_t)rxbneid8Content;
     
     if (frame->extendedIdEnabled) {
-        if (rxbndlcContent & 0b01000000) {
+        if (rxbndlcContent.rtrBit) {
             frame->isRTS = true;
         } else {
             frame->isRTS = false;
         }
     } else {
-        if (rxbnsidlContent & 0b00010000) {
+        if (rxbnsidlContent.srrBit) {
             frame->isRTS = true;
         } else {
             frame->isRTS = false;
         }
     }
 
-    frame->length = rxbndlcContent & 0b00001111;
+    frame->length = rxbndlcContent.dlcBits0to3;
 }
 
 
@@ -172,27 +186,47 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         case 2: instruction = 0b01000100; break;
         default: printf("buffer doesn't exist");
     }
+
     uint8_t txbnsidhContent = (uint8_t)(frame->canStandardId >> 4);
-    uint8_t txbnsidlContent = (uint8_t)(frame->canStandardId << 4);
-    if (frame->extendedIdEnabled) {
-        txbnsidlContent |= 0b00001000;
-    } else {
-        txbnsidlContent &= ~0b00001000;
-    }
-    txbnsidlContent |= frame->extendedId >> 16;
+
+    struct txbnsidl {
+        uint8_t sidBits0to2 : 3;
+        uint8_t padding0 : 1;
+        uint8_t exideBit : 1;
+        uint8_t padding1 : 1;
+        uint8_t eidBits16to17 : 2;
+    };
+
+    struct txbnsidl txbnsidlContent = {
+        .sidBits0to2 = frame->canStandardId,
+        .exideBit = frame->extendedIdEnabled,
+        .eidBits16to17 = frame->extendedId >> 16,
+    };
+
     uint8_t rxbneid8Content = frame->extendedId >> 8;
-    uint8_t rxbneid0Content = frame->extendedId ;
-    uint8_t txbndlcContent = frame->isRTS & 0b01000000;
-    txbndlcContent |= frame->length & 0b00001111;
+
+    uint8_t rxbneid0Content = frame->extendedId;
+
+    struct txbndlc {
+        uint8_t padding0 : 1;
+        uint8_t rtrBit : 1;
+        uint8_t padding1 : 2;
+        uint8_t dlcBits0to3 : 4;
+    };
+
+    struct txbndlc txbndlcContent = {
+        .rtrBit = frame->isRTS,
+        .dlcBits0to3 = frame->length,
+    };
 
     // Consecutive write to transmit registers.
     gpio_put(mcp2515->_pinCs, 0); // chip select, active low
     spi_write_blocking(mcp2515->_spiPort, &instruction, 1);
     spi_write_blocking(mcp2515->_spiPort, &txbnsidhContent, 1);
-    spi_write_blocking(mcp2515->_spiPort, &txbnsidlContent, 1);
+    spi_write_blocking(mcp2515->_spiPort, (uint8_t*)&txbnsidlContent, 1);
     spi_write_blocking(mcp2515->_spiPort, &rxbneid8Content, 1);
     spi_write_blocking(mcp2515->_spiPort, &rxbneid0Content, 1);
-    spi_write_blocking(mcp2515->_spiPort, &txbndlcContent, 1);
+    spi_write_blocking(mcp2515->_spiPort, (uint8_t*)&txbndlcContent, 1);
     spi_write_blocking(mcp2515->_spiPort, frame->data, frame->length);
     gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 }
