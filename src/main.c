@@ -91,7 +91,7 @@ int main(){
             printf("Delay %d us\n", (uint32_t)delay);
         }
         if (lastExtendedID != buffer.extendedId) {
-            printf("kacki");
+            printf("failed to transmit extended id");
         }
         lastExtendedID = buffer.extendedId;
         transmittedMessages++;

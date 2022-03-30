@@ -1,2 +1,2 @@
 A driver to run the MCP2515.  
-RTR is not yet working.
+Not for use yet. RTR is not working.
