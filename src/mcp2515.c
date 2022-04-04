@@ -98,11 +98,10 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
 
     struct messageHeaderRegisters {
         //RXBnSIDH_REGISTER
-        uint8_t sidBits3to10 : 3;
+        uint8_t sidBits3to10 : 8;
 
         //RXBnSIDL_REGISTER
         uint8_t sidBits0to2 : 3;
-        uint8_t padding0 : 1;
         uint8_t srrBit : 1;
         uint8_t ideBit : 1;
         uint8_t padding1 : 1;
@@ -118,71 +117,45 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         uint8_t padding2 : 1;
         uint8_t rtrBit : 1;
         uint8_t padding3 : 2;
-        uint8_t dlcbits0to3 : 4;
-    };
-
-    struct messageHeaderRegisters messageHeaderRegisters = {0};
-    
-
-    uint8_t rxbnsidhContent;
-
-    struct rxbnsidl {
-        uint8_t sidBits0to2 : 3;
-        uint8_t padding0 : 1;
-        uint8_t srrBit : 1;
-        uint8_t ideBit : 1;
-        uint8_t eidBits16to17 : 2;
-    };
-
-    struct rxbnsidl rxbnsidlContent = {0};
-
-    uint8_t rxbneid8Content;
-    uint8_t rxbneid0Content;
-
-    struct rxbndlc {
-        uint8_t padding0 : 1;
-        uint8_t rtrBit : 1;
-        uint8_t padding1 : 2;
         uint8_t dlcBits0to3 : 4;
     };
 
-    struct rxbndlc rxbndlcContent = {0};    
+    struct messageHeaderRegisters messageHeaderRegisters = {0};
 
-    // Consecutive write to transmit registers.
     gpio_put(mcp2515->_pinCs, 0); // chip select, active low
     spi_write_blocking(mcp2515->_spiPort, &instruction, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, &rxbnsidhContent, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, (uint8_t*)&rxbnsidlContent, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid8Content, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid0Content, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, (uint8_t*)&rxbndlcContent, 1);
+    spi_read_blocking(mcp2515->_spiPort, 0, (uint8_t*)&messageHeaderRegisters, 5);
     spi_read_blocking(mcp2515->_spiPort, 0, message->data, 8);
     gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 
-    message->canStandardId = (uint16_t)rxbnsidhContent << 4;
-    message->canStandardId += (uint16_t)rxbnsidlContent.sidBits0to2;
+    uint16_t standardIdBigEndian = 0;
+    standardIdBigEndian |= (uint16_t)messageHeaderRegisters.sidBits3to10 << 4;
+    standardIdBigEndian |= (uint16_t)messageHeaderRegisters.sidBits0to2;
+    message->canStandardId = utils_byteswap16(standardIdBigEndian);
 
-    message->extendedIdEnabled = rxbnsidlContent.ideBit;
+    message->extendedIdEnabled = messageHeaderRegisters.ideBit;
 
-    message->extendedId = ((uint32_t)rxbnsidlContent.eidBits16to17)<<16;
-    message->extendedId |= (uint32_t)rxbneid8Content<<8;
-    message->extendedId |= (uint32_t)rxbneid8Content;
-    
+    uint16_t extendedIdBigEndian = 0;
+    extendedIdBigEndian |= (uint32_t)messageHeaderRegisters.eidBits16to17 << 16;
+    extendedIdBigEndian |= (uint32_t)messageHeaderRegisters.sidBits8to15 << 8;
+    extendedIdBigEndian |= (uint32_t)messageHeaderRegisters.sidBits0to7;
+    message->extendedId = utils_byteswap32(extendedIdBigEndian);
+
+
     if (message->extendedIdEnabled) {
-        if (rxbndlcContent.rtrBit) {
+        if (messageHeaderRegisters.rtrBit) {
             message->isRTS = true;
         } else {
             message->isRTS = false;
         }
     } else {
-        if (rxbnsidlContent.srrBit) {
+        if (messageHeaderRegisters.srrBit) {
             message->isRTS = true;
         } else {
             message->isRTS = false;
         }
     }
-
-    message->length = rxbndlcContent.dlcBits0to3;
+    message->length = messageHeaderRegisters.dlcBits0to3;
 }
 
 
