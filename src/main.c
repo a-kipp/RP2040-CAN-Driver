@@ -38,11 +38,11 @@ int main(){
     mcp2515_init(&canA, PIN_CS_A, CAN_BAUDRATE, SPI_PORT);
     // Controller is in listen-only mode after initialization.
     // Set it to normal mode to send out messages.
-    mcp2515_setOpmode(&canA, NORMAL_MODE);
+    mcp2515_setOpmode(&canA, LOOPBACK_MODE);
     
-    Mcp2515 canB;
-    mcp2515_init(&canB, PIN_CS_B, CAN_BAUDRATE, SPI_PORT);
-    mcp2515_setOpmode(&canB, NORMAL_MODE);
+    //Mcp2515 canB;
+    //mcp2515_init(&canB, PIN_CS_B, CAN_BAUDRATE, SPI_PORT);
+    //mcp2515_setOpmode(&canB, NORMAL_MODE);
 
 
 
@@ -76,7 +76,7 @@ int main(){
         *val_ptr = *val_ptr + 1;
         timeStart1 = get_absolute_time();
         mcp2515_sendMessageBlocking(&canA, &buffer);
-        mcp2515_recieveMessageBlocking(&canB, &RecieveBuffer);
+        mcp2515_recieveMessageBlocking(&canA, &RecieveBuffer);
         delay = (delay + absolute_time_diff_us(timeStart1, get_absolute_time())) / 2;
         sleep_ms(10);
         if (lastVal + 1 != *val_ptr) {

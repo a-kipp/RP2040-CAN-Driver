@@ -83,7 +83,7 @@ static uint8_t mcp2515_readByte(Mcp2515 *mcp2515, uint8_t address) {
 
 
 
-static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage* frame) {
+static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage* message) {
     // MISO  1 0 0 1 0 n m 0 _______________ ___________
     // MOSI  _______________ n n n n n n n n n n n n n n
     //      |<-instruction->|<----data----->|<----data--...
@@ -127,33 +127,33 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid8Content, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid0Content, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, (uint8_t*)&rxbndlcContent, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, frame->data, 8);
+    spi_read_blocking(mcp2515->_spiPort, 0, message->data, 8);
     gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 
-    frame->canStandardId = (uint16_t)rxbnsidhContent << 4;
-    frame->canStandardId += (uint16_t)rxbnsidlContent.sidBits0to2;
+    message->canStandardId = (uint16_t)rxbnsidhContent << 4;
+    message->canStandardId += (uint16_t)rxbnsidlContent.sidBits0to2;
 
-    frame->extendedIdEnabled = rxbnsidlContent.ideBit;
+    message->extendedIdEnabled = rxbnsidlContent.ideBit;
 
-    frame->extendedId = ((uint32_t)rxbnsidlContent.eidBits16to17)<<16;
-    frame->extendedId |= (uint32_t)rxbneid8Content<<8;
-    frame->extendedId |= (uint32_t)rxbneid8Content;
+    message->extendedId = ((uint32_t)rxbnsidlContent.eidBits16to17)<<16;
+    message->extendedId |= (uint32_t)rxbneid8Content<<8;
+    message->extendedId |= (uint32_t)rxbneid8Content;
     
-    if (frame->extendedIdEnabled) {
+    if (message->extendedIdEnabled) {
         if (rxbndlcContent.rtrBit) {
-            frame->isRTS = true;
+            message->isRTS = true;
         } else {
-            frame->isRTS = false;
+            message->isRTS = false;
         }
     } else {
         if (rxbnsidlContent.srrBit) {
-            frame->isRTS = true;
+            message->isRTS = true;
         } else {
-            frame->isRTS = false;
+            message->isRTS = false;
         }
     }
 
-    frame->length = rxbndlcContent.dlcBits0to3;
+    message->length = rxbndlcContent.dlcBits0to3;
 }
 
 
@@ -174,7 +174,7 @@ static void mcp2515_writeByte(Mcp2515 *mcp2515, uint8_t address, uint8_t data) {
 
 
 
-static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage* frame) {
+static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage* message) {
     // MISO  0 1 0 0 0 a b c n n n n n n n n n n n n n n
     // MOSI  _________ _____ _______________ ___________
     //      |<-instr->|<adr>|<----data----->|<----data--...
@@ -187,7 +187,7 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         default: printf("buffer doesn't exist");
     }
 
-    uint8_t txbnsidhContent = (uint8_t)(frame->canStandardId >> 4);
+    uint8_t txbnsidhContent = (uint8_t)(message->canStandardId >> 4);
 
     struct txbnsidl {
         uint8_t sidBits0to2 : 3;
@@ -198,14 +198,14 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     };
 
     struct txbnsidl txbnsidlContent = {
-        .sidBits0to2 = frame->canStandardId,
-        .exideBit = frame->extendedIdEnabled,
-        .eidBits16to17 = frame->extendedId >> 16,
+        .sidBits0to2 = message->canStandardId,
+        .exideBit = message->extendedIdEnabled,
+        .eidBits16to17 = message->extendedId >> 16,
     };
 
-    uint8_t rxbneid8Content = frame->extendedId >> 8;
+    uint8_t rxbneid8Content = message->extendedId >> 8;
 
-    uint8_t rxbneid0Content = frame->extendedId;
+    uint8_t rxbneid0Content = message->extendedId;
 
     struct txbndlc {
         uint8_t padding0 : 1;
@@ -215,8 +215,8 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     };
 
     struct txbndlc txbndlcContent = {
-        .rtrBit = frame->isRTS,
-        .dlcBits0to3 = frame->length,
+        .rtrBit = message->isRTS,
+        .dlcBits0to3 = message->length,
     };
 
     // Consecutive write to transmit registers.
@@ -227,7 +227,7 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     spi_write_blocking(mcp2515->_spiPort, &rxbneid8Content, 1);
     spi_write_blocking(mcp2515->_spiPort, &rxbneid0Content, 1);
     spi_write_blocking(mcp2515->_spiPort, (uint8_t*)&txbndlcContent, 1);
-    spi_write_blocking(mcp2515->_spiPort, frame->data, frame->length);
+    spi_write_blocking(mcp2515->_spiPort, message->data, message->length);
     gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 }
 
@@ -475,7 +475,7 @@ void mcp2515_sendMessageBlocking(Mcp2515 *mcp2515, CanMessage* message) {
 
 
 // Get Message from recieve buffer. If no message inside, return false.
-bool mcp2515_TryRecieveMessage(Mcp2515* mcp2515, CanMessage* frame) {
+bool mcp2515_TryRecieveMessage(Mcp2515* mcp2515, CanMessage* message) {
 
     bool isMessageInBuffer = true;
     
@@ -486,17 +486,17 @@ bool mcp2515_TryRecieveMessage(Mcp2515* mcp2515, CanMessage* frame) {
 
     if(mcp2515->_lastMessagePulledFromBuff = 1) {
         if(isRxBuf0Full) {
-            mcp2515_readRxBuffer(mcp2515, 0, frame);
+            mcp2515_readRxBuffer(mcp2515, 0, message);
         } else if(isRxBuf1Full) {
-            mcp2515_readRxBuffer(mcp2515, 1, frame);
+            mcp2515_readRxBuffer(mcp2515, 1, message);
         } else {
             isMessageInBuffer = false;
         }
     } else {
         if(isRxBuf1Full) {
-            mcp2515_readRxBuffer(mcp2515, 1, frame);
+            mcp2515_readRxBuffer(mcp2515, 1, message);
         } else if(isRxBuf0Full)  {
-            mcp2515_readRxBuffer(mcp2515, 0, frame);
+            mcp2515_readRxBuffer(mcp2515, 0, message);
         } else {
             isMessageInBuffer = false;
         }
@@ -509,12 +509,12 @@ bool mcp2515_TryRecieveMessage(Mcp2515* mcp2515, CanMessage* frame) {
 
 // Get Message from recieve buffer. If no message is inside, wait till a 
 // message has been recieved
-void mcp2515_recieveMessageBlocking(Mcp2515* mcp2515, CanMessage* frame) {
+void mcp2515_recieveMessageBlocking(Mcp2515* mcp2515, CanMessage* message) {
     
     bool isMessageInBuffer = false;
 
     while (!isMessageInBuffer) {
-        isMessageInBuffer = mcp2515_TryRecieveMessage(mcp2515, frame);
+        isMessageInBuffer = mcp2515_TryRecieveMessage(mcp2515, message);
     }
 }
 
