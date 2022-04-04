@@ -42,14 +42,14 @@ int main(){
     
     //Mcp2515 canB;
     //mcp2515_init(&canB, PIN_CS_B, CAN_BAUDRATE, SPI_PORT);
-    //mcp2515_setOpmode(&canB, NORMAL_MODE);
+    //mcp2515_setOpmode(&canB, LOOPBACK_MODE);
 
 
 
     // Speedtest
 
     CanMessage buffer = {0};
-    buffer.length = 8;
+    buffer.length = 7;
     buffer.extendedIdEnabled = false;
     buffer.extendedId = 0b00000000000000111111111111111111;
     buffer.canStandardId = 666;
