@@ -21,6 +21,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <stdbool.h>
 #include <hardware/spi.h>
 #include "register.h"
+#include "utils.c"
 
 // RTS it not working
 
@@ -94,6 +95,34 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         case 1: instruction = 0b10010100; break;
         default: printf("buffer doesn't exist");
     }
+
+    struct messageHeaderRegisters {
+        //RXBnSIDH_REGISTER
+        uint8_t sidBits3to10 : 3;
+
+        //RXBnSIDL_REGISTER
+        uint8_t sidBits0to2 : 3;
+        uint8_t padding0 : 1;
+        uint8_t srrBit : 1;
+        uint8_t ideBit : 1;
+        uint8_t padding1 : 1;
+        uint8_t eidBits16to17 : 2;
+
+        //RXBnEID8_REGISTER
+        uint8_t sidBits8to15 : 8;
+
+        //RXBnEID0_REGISTER
+        uint8_t sidBits0to7 : 8;
+
+        //RXBnDLC_REGISTER
+        uint8_t padding2 : 1;
+        uint8_t rtrBit : 1;
+        uint8_t padding3 : 2;
+        uint8_t dlcbits0to3 : 4;
+    };
+
+    struct messageHeaderRegisters messageHeaderRegisters = {0};
+    
 
     uint8_t rxbnsidhContent;
 
