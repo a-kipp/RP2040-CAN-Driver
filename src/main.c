@@ -15,6 +15,18 @@
 
 
 
+
+void printBuffer(CanMessage* sendMessage, CanMessage* recievedMessage) {
+    printf("length: %d %d\n", sendMessage->length, recievedMessage->length);
+    printf("extended Id Enabled: %d %d\n", sendMessage->extendedIdEnabled, recievedMessage->extendedIdEnabled);
+    printf("extended Id: %d %d\n", sendMessage->extendedId, recievedMessage->extendedId);
+    printf("standard Id: %d %d\n", sendMessage->canStandardId, recievedMessage->canStandardId);
+    printf("is RTR: %d %d\n", sendMessage->isRTR, recievedMessage->isRTR);
+    printf("data %d %d\n", *sendMessage->data, *recievedMessage->data);
+}
+
+
+
 int main(){
     stdio_init_all();
 
@@ -48,16 +60,16 @@ int main(){
 
     // Speedtest
 
-    CanMessage buffer = {0};
-    buffer.length = 7;
-    buffer.extendedIdEnabled = false;
-    buffer.extendedId = 0b00000000000000111111111111111111;
-    buffer.canStandardId = 666;
-    buffer.isRTS = true;
+    CanMessage transmitBuffer = {0};
+    transmitBuffer.length = 1;
+    transmitBuffer.extendedIdEnabled = true;
+    transmitBuffer.extendedId = 0b00000000000000111111111111111111;
+    transmitBuffer.canStandardId = 666;
+    transmitBuffer.isRTR = false;
 
-    CanMessage RecieveBuffer = {0};
+    CanMessage recieveBuffer = {0};
 
-    uint32_t* val_ptr = (uint32_t*)&buffer.data;
+    uint32_t* val_ptr = (uint32_t*)&transmitBuffer.data;
     *val_ptr = 0;
 
     uint32_t lastVal = 0;
@@ -67,7 +79,7 @@ int main(){
     absolute_time_t timeStart = get_absolute_time();
     absolute_time_t timeStart1 = get_absolute_time();
 
-    uint32_t lastExtendedID = buffer.extendedId;
+    uint32_t lastExtendedID = transmitBuffer.extendedId;
 
     int64_t delay;
 
@@ -75,10 +87,11 @@ int main(){
     {
         *val_ptr = *val_ptr + 1;
         timeStart1 = get_absolute_time();
-        mcp2515_sendMessageBlocking(&canA, &buffer);
-        mcp2515_recieveMessageBlocking(&canA, &RecieveBuffer);
+        mcp2515_sendMessageBlocking(&canA, &transmitBuffer);
+        mcp2515_recieveMessageBlocking(&canA, &recieveBuffer);
+        printBuffer(&transmitBuffer, &recieveBuffer);
         delay = (delay + absolute_time_diff_us(timeStart1, get_absolute_time())) / 2;
-        sleep_ms(10);
+        sleep_ms(1000);
         if (lastVal + 1 != *val_ptr) {
             errors++;
         }
@@ -90,10 +103,10 @@ int main(){
             printf("Errors %d    ", errors);
             printf("Delay %d us\n", (uint32_t)delay);
         }
-        if (lastExtendedID != buffer.extendedId) {
+        if (lastExtendedID != transmitBuffer.extendedId) {
             printf("failed to transmit extended id");
         }
-        lastExtendedID = buffer.extendedId;
+        lastExtendedID = transmitBuffer.extendedId;
         transmittedMessages++;
     }
 

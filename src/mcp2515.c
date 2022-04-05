@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 #include <hardware/spi.h>
 #include "register.h"
 
@@ -37,7 +38,7 @@ typedef struct CanMessage {
     uint16_t canStandardId;
     bool extendedIdEnabled;
     uint32_t extendedId;
-    bool isRTS;
+    bool isRTR;
     uint8_t length;
     uint8_t data[8];
 } CanMessage;
@@ -95,6 +96,8 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         default: printf("buffer doesn't exist");
     }
 
+    uint8_t NO_DATA[8] = {0}; // a can message has 8 bytes of data at max
+
     uint8_t rxbnsidhRegister = 0;
     uint8_t rxbnsidlRegister = 0;
     uint8_t rxbneid8Register = 0;
@@ -109,10 +112,8 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid8Register, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid0Register, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbndlcRegister, 1);
-    spi_read_blocking(mcp2515->_spiPort, 0, message->data, 8);
-    gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 
-    // fiddle out the bits and bytes from the registers
+    // reading out the message header from registers
     message->canStandardId = (
         ((uint16_t)rxbnsidhRegister) << 3 |
         ((uint16_t)rxbnsidlRegister) >> 5
@@ -129,18 +130,28 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     }
     if (message->extendedIdEnabled) {
         if (rxbndlcRegister & 0b01000000) {
-            message->isRTS = true;
+            message->isRTR = true;
         } else {
-            message->isRTS = false;
+            message->isRTR = false;
         }
     } else {
         if (rxbnsidlRegister & 0b00010000) {
-            message->isRTS = true;
+            message->isRTR = true;
         } else {
-            message->isRTS = false;
+            message->isRTR = false;
         }
     }
-    message->length = rxbndlcRegister & 0b00001111;
+    if (message->isRTR) {
+        message->length = 0;
+    } else {
+        message->length = rxbndlcRegister & 0b00001111;
+    }
+
+    memcpy(message->data, NO_DATA, 8); // zero out data buffer
+
+    // continue reading the data payload of the message
+    spi_read_blocking(mcp2515->_spiPort, 0, message->data, message->length);
+    gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 }
 
 
@@ -182,7 +193,7 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     uint8_t txbneid8Register = message->extendedId >> 8;
     uint8_t txbneid0Register = message->extendedId;
     uint8_t txbndlcRegister = (
-        message->isRTS << 6 |
+        message->isRTR << 6 |
         message->length & 0b00001111
     );
 
