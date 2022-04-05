@@ -69,8 +69,4 @@ src/CMakeFiles/RP2040-CAN-Driver.dir/main.c.obj: \
  /usr/share/pico-sdk/src/rp2040/hardware_structs/include/hardware/structs/spi.h \
  /usr/share/pico-sdk/src/rp2040/hardware_regs/include/hardware/regs/spi.h \
  /home/andreas/code/rp2040_pico/projects/RP2040-CAN-Driver/src/mcp2515.c \
- /usr/arm-none-eabi/include/string.h \
- /usr/arm-none-eabi/include/sys/_locale.h \
- /usr/arm-none-eabi/include/strings.h \
- /usr/arm-none-eabi/include/sys/string.h \
  /home/andreas/code/rp2040_pico/projects/RP2040-CAN-Driver/src/register.h

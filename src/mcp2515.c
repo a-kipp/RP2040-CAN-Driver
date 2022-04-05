@@ -19,7 +19,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdio.h>
 #include <stdbool.h>
-#include <string.h>
 #include <hardware/spi.h>
 #include "register.h"
 

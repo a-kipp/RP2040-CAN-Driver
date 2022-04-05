@@ -1366,9 +1366,9 @@ Discarded input sections
                 0x0000000000000000       0x3c CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
  .time_critical.spi_read16_blocking
                 0x0000000000000000       0x3e CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
- .text          0x0000000000000000        0x0 /tmp/ccNXmSqM.o
- .data          0x0000000000000000        0x0 /tmp/ccNXmSqM.o
- .bss           0x0000000000000000        0x0 /tmp/ccNXmSqM.o
+ .text          0x0000000000000000        0x0 /tmp/cc8MnKhS.o
+ .data          0x0000000000000000        0x0 /tmp/cc8MnKhS.o
+ .bss           0x0000000000000000        0x0 /tmp/cc8MnKhS.o
  .data          0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/11.2.0/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
  .bss           0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/11.2.0/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
  .text          0x0000000000000000        0x0 /usr/lib/gcc/arm-none-eabi/11.2.0/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libg.a(lib_a-atexit.o)
@@ -1569,7 +1569,7 @@ LOAD /usr/lib/gcc/arm-none-eabi/11.2.0/../../../../arm-none-eabi/lib/thumb/v6-m/
 .boot2          0x0000000010000000      0x100
                 0x0000000010000000                __boot2_start__ = .
  *(.boot2)
- .boot2         0x0000000010000000      0x100 /tmp/ccNXmSqM.o
+ .boot2         0x0000000010000000      0x100 /tmp/cc8MnKhS.o
                 0x0000000010000100                __boot2_end__ = .
                 0x0000000000000001                ASSERT (((__boot2_end__ - __boot2_start__) == 0x100), ERROR: Pico second stage bootloader must be 256 bytes in size)
 
@@ -3173,7 +3173,7 @@ LOAD CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_fix
 LOAD CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.obj
 LOAD CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
 LOAD CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
-LOAD /tmp/ccNXmSqM.o
+LOAD /tmp/cc8MnKhS.o
 LOAD /usr/lib/gcc/arm-none-eabi/11.2.0/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libstdc++.a
 LOAD /usr/lib/gcc/arm-none-eabi/11.2.0/../../../../arm-none-eabi/lib/thumb/v6-m/nofp/libm.a
 START GROUP
@@ -3294,7 +3294,7 @@ LOAD linker stubs
  .ARM.attributes
                 0x0000000000000800       0x2c CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
  .ARM.attributes
-                0x000000000000082c       0x22 /tmp/ccNXmSqM.o
+                0x000000000000082c       0x22 /tmp/cc8MnKhS.o
  .ARM.attributes
                 0x000000000000084e       0x1e /usr/lib/gcc/arm-none-eabi/11.2.0/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
  .ARM.attributes
@@ -3353,55 +3353,55 @@ LOAD linker stubs
  .comment       0x000000000000001e       0x1f CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
  .comment       0x000000000000001e       0x1f CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
 
-.debug_info     0x0000000000000000    0x26090
- .debug_info    0x0000000000000000     0x23c6 CMakeFiles/RP2040-CAN-Driver.dir/main.c.obj
- .debug_info    0x00000000000023c6     0x1417 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
- .debug_info    0x00000000000037dd      0x69a CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
- .debug_info    0x0000000000003e77      0x1fb CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
- .debug_info    0x0000000000004072      0x5db CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
- .debug_info    0x000000000000464d      0xb20 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
- .debug_info    0x000000000000516d     0x3c01 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_time/time.c.obj
- .debug_info    0x0000000000008d6e     0x115e CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
- .debug_info    0x0000000000009ecc      0x1a3 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_sync/lock_core.c.obj
- .debug_info    0x000000000000a06f     0x2055 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_sync/mutex.c.obj
- .debug_info    0x000000000000c0c4      0x2cb CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_sync/critical_section.c.obj
- .debug_info    0x000000000000c38f     0x1223 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_util/pheap.c.obj
- .debug_info    0x000000000000d5b2      0xa56 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
- .debug_info    0x000000000000e008      0xf81 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
- .debug_info    0x000000000000ef89     0x191b CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
- .debug_info    0x00000000000108a4      0x505 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
- .debug_info    0x0000000000010da9      0x4c5 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
- .debug_info    0x000000000001126e      0x1c7 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
- .debug_info    0x0000000000011435     0x19b1 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
- .debug_info    0x0000000000012de6       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
- .debug_info    0x0000000000012e09      0x26d CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
- .debug_info    0x0000000000013076       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
- .debug_info    0x0000000000013099       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
- .debug_info    0x00000000000130bc      0x33f CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
- .debug_info    0x00000000000133fb       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
- .debug_info    0x000000000001341e       0x24 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
- .debug_info    0x0000000000013442       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
- .debug_info    0x0000000000013465      0x34f CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
- .debug_info    0x00000000000137b4       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
- .debug_info    0x00000000000137d7       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
- .debug_info    0x00000000000137fa       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
- .debug_info    0x000000000001381d      0x2b3 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
- .debug_info    0x0000000000013ad0     0x1313 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
- .debug_info    0x0000000000014de3      0xc24 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
- .debug_info    0x0000000000015a07      0x79d CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio_usb/reset_interface.c.obj
- .debug_info    0x00000000000161a4      0xf44 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.obj
- .debug_info    0x00000000000170e8      0x62a CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.obj
- .debug_info    0x0000000000017712     0x18b0 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
- .debug_info    0x0000000000018fc2      0xded CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
- .debug_info    0x0000000000019daf     0x44f8 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
- .debug_info    0x000000000001e2a7      0xa78 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
- .debug_info    0x000000000001ed1f     0x1c68 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
- .debug_info    0x0000000000020987      0xc50 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/tusb.c.obj
- .debug_info    0x00000000000215d7     0x28b0 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
- .debug_info    0x0000000000023e87      0x275 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.obj
- .debug_info    0x00000000000240fc      0xee5 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
- .debug_info    0x0000000000024fe1     0x108b CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
- .debug_info    0x000000000002606c       0x24 /usr/lib/gcc/arm-none-eabi/11.2.0/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
+.debug_info     0x0000000000000000    0x26091
+ .debug_info    0x0000000000000000     0x23c7 CMakeFiles/RP2040-CAN-Driver.dir/main.c.obj
+ .debug_info    0x00000000000023c7     0x1417 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_gpio/gpio.c.obj
+ .debug_info    0x00000000000037de      0x69a CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_claim/claim.c.obj
+ .debug_info    0x0000000000003e78      0x1fb CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_platform/platform.c.obj
+ .debug_info    0x0000000000004073      0x5db CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_sync/sync.c.obj
+ .debug_info    0x000000000000464e      0xb20 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_uart/uart.c.obj
+ .debug_info    0x000000000000516e     0x3c01 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_time/time.c.obj
+ .debug_info    0x0000000000008d6f     0x115e CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_timer/timer.c.obj
+ .debug_info    0x0000000000009ecd      0x1a3 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_sync/lock_core.c.obj
+ .debug_info    0x000000000000a070     0x2055 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_sync/mutex.c.obj
+ .debug_info    0x000000000000c0c5      0x2cb CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_sync/critical_section.c.obj
+ .debug_info    0x000000000000c390     0x1223 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/common/pico_util/pheap.c.obj
+ .debug_info    0x000000000000d5b3      0xa56 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_runtime/runtime.c.obj
+ .debug_info    0x000000000000e009      0xf81 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_clocks/clocks.c.obj
+ .debug_info    0x000000000000ef8a     0x191b CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_irq/irq.c.obj
+ .debug_info    0x00000000000108a5      0x505 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_pll/pll.c.obj
+ .debug_info    0x0000000000010daa      0x4c5 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_watchdog/watchdog.c.obj
+ .debug_info    0x000000000001126f      0x1c7 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_xosc/xosc.c.obj
+ .debug_info    0x0000000000011436     0x19b1 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_printf/printf.c.obj
+ .debug_info    0x0000000000012de7       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_bit_ops/bit_ops_aeabi.S.obj
+ .debug_info    0x0000000000012e0a      0x26d CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_bootrom/bootrom.c.obj
+ .debug_info    0x0000000000013077       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_divider/divider.S.obj
+ .debug_info    0x000000000001309a       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_double/double_aeabi.S.obj
+ .debug_info    0x00000000000130bd      0x33f CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_double/double_init_rom.c.obj
+ .debug_info    0x00000000000133fc       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_double/double_v1_rom_shim.S.obj
+ .debug_info    0x000000000001341f       0x24 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_int64_ops/pico_int64_ops_aeabi.S.obj
+ .debug_info    0x0000000000013443       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_float/float_aeabi.S.obj
+ .debug_info    0x0000000000013466      0x34f CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_float/float_init_rom.c.obj
+ .debug_info    0x00000000000137b5       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_float/float_v1_rom_shim.S.obj
+ .debug_info    0x00000000000137d8       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_mem_ops/mem_ops_aeabi.S.obj
+ .debug_info    0x00000000000137fb       0x23 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_standard_link/crt0.S.obj
+ .debug_info    0x000000000001381e      0x2b3 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_standard_link/binary_info.c.obj
+ .debug_info    0x0000000000013ad1     0x1313 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio/stdio.c.obj
+ .debug_info    0x0000000000014de4      0xc24 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio_uart/stdio_uart.c.obj
+ .debug_info    0x0000000000015a08      0x79d CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio_usb/reset_interface.c.obj
+ .debug_info    0x00000000000161a5      0xf44 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb.c.obj
+ .debug_info    0x00000000000170e9      0x62a CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_stdio_usb/stdio_usb_descriptors.c.obj
+ .debug_info    0x0000000000017713     0x18b0 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/dcd_rp2040.c.obj
+ .debug_info    0x0000000000018fc3      0xded CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/portable/raspberrypi/rp2040/rp2040_usb.c.obj
+ .debug_info    0x0000000000019db0     0x44f8 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/device/usbd.c.obj
+ .debug_info    0x000000000001e2a8      0xa78 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/device/usbd_control.c.obj
+ .debug_info    0x000000000001ed20     0x1c68 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/class/cdc/cdc_device.c.obj
+ .debug_info    0x0000000000020988      0xc50 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/tusb.c.obj
+ .debug_info    0x00000000000215d8     0x28b0 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/common/tusb_fifo.c.obj
+ .debug_info    0x0000000000023e88      0x275 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/pico_unique_id/unique_id.c.obj
+ .debug_info    0x00000000000240fd      0xee5 CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_flash/flash.c.obj
+ .debug_info    0x0000000000024fe2     0x108b CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/src/rp2_common/hardware_spi/spi.c.obj
+ .debug_info    0x000000000002606d       0x24 /usr/lib/gcc/arm-none-eabi/11.2.0/thumb/v6-m/nofp/libgcc.a(_dvmd_tls.o)
 
 .debug_abbrev   0x0000000000000000     0x742c
  .debug_abbrev  0x0000000000000000      0x49f CMakeFiles/RP2040-CAN-Driver.dir/main.c.obj
