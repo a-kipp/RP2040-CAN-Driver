@@ -1,0 +1,22 @@
+make -f /home/andreas/code/vertsys/milestone_2/build/src/Makefile --dry-run --always-make --keep-going --print-directory
+make: Entering directory '/home/andreas/code/rp2040_pico/projects/RP2040-CAN-Driver'
+cd /home/andreas/code/vertsys/milestone_2/build && /usr/bin/cmake -S/home/andreas/code/vertsys/milestone_2 -B/home/andreas/code/vertsys/milestone_2/build --check-build-system CMakeFiles/Makefile.cmake 0
+cd /home/andreas/code/vertsys/milestone_2/build && /usr/bin/cmake -E cmake_progress_start /home/andreas/code/vertsys/milestone_2/build/CMakeFiles /home/andreas/code/vertsys/milestone_2/build/src//CMakeFiles/progress.marks
+cd /home/andreas/code/vertsys/milestone_2/build && make -s -f CMakeFiles/Makefile2 src/all
+make[1]: Entering directory '/home/andreas/code/vertsys/milestone_2/build'
+make -s -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/depend
+make[2]: Entering directory '/home/andreas/code/vertsys/milestone_2/build'
+cd /home/andreas/code/vertsys/milestone_2/build && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/andreas/code/vertsys/milestone_2 /home/andreas/code/vertsys/milestone_2/src /home/andreas/code/vertsys/milestone_2/build /home/andreas/code/vertsys/milestone_2/build/src /home/andreas/code/vertsys/milestone_2/build/src/CMakeFiles/main.dir/DependInfo.cmake --color=
+make[2]: Leaving directory '/home/andreas/code/vertsys/milestone_2/build'
+make -s -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/build
+make[2]: Entering directory '/home/andreas/code/vertsys/milestone_2/build'
+/usr/bin/cmake -E cmake_echo_color --switch= --green --progress-dir=/home/andreas/code/vertsys/milestone_2/build/CMakeFiles --progress-num=1 "Building C object src/CMakeFiles/main.dir/main.c.o"
+cd /home/andreas/code/vertsys/milestone_2/build/src && /usr/bin/cc   -pthread -MD -MT src/CMakeFiles/main.dir/main.c.o -MF CMakeFiles/main.dir/main.c.o.d -o CMakeFiles/main.dir/main.c.o -c /home/andreas/code/vertsys/milestone_2/src/main.c
+/usr/bin/cmake -E cmake_echo_color --switch= --green --bold --progress-dir=/home/andreas/code/vertsys/milestone_2/build/CMakeFiles --progress-num=2 "Linking C executable main"
+cd /home/andreas/code/vertsys/milestone_2/build/src && /usr/bin/cmake -E cmake_link_script CMakeFiles/main.dir/link.txt --verbose=
+make[2]: Leaving directory '/home/andreas/code/vertsys/milestone_2/build'
+/usr/bin/cmake -E cmake_echo_color --switch= --progress-dir=/home/andreas/code/vertsys/milestone_2/build/CMakeFiles --progress-num=1,2 "Built target main"
+make[1]: Leaving directory '/home/andreas/code/vertsys/milestone_2/build'
+/usr/bin/cmake -E cmake_progress_start /home/andreas/code/vertsys/milestone_2/build/CMakeFiles 0
+make: Leaving directory '/home/andreas/code/rp2040_pico/projects/RP2040-CAN-Driver'
+ 
