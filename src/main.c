@@ -61,11 +61,10 @@ int main(){
     // Speedtest
 
     CanMessage transmitBuffer = {0};
-    transmitBuffer.length = 1;
-    transmitBuffer.extendedIdEnabled = true;
-    transmitBuffer.extendedId = 0b00000000000000111111111111111111;
+    transmitBuffer.length = 4;
+    transmitBuffer.extendedIdEnabled = false;
     transmitBuffer.canStandardId = 666;
-    transmitBuffer.isRTR = false;
+    transmitBuffer.isRTR = true;
 
     CanMessage recieveBuffer = {0};
 
@@ -85,17 +84,19 @@ int main(){
 
     while (1)
     {
-        *val_ptr = *val_ptr + 1;
         timeStart1 = get_absolute_time();
         mcp2515_sendMessageBlocking(&canA, &transmitBuffer);
         mcp2515_recieveMessageBlocking(&canA, &recieveBuffer);
-        printBuffer(&transmitBuffer, &recieveBuffer);
         delay = (delay + absolute_time_diff_us(timeStart1, get_absolute_time())) / 2;
-        sleep_ms(1000);
-        if (lastVal + 1 != *val_ptr) {
+        if (*(uint32_t*)transmitBuffer.data != *(uint32_t*)recieveBuffer.data) {
+            if (!transmitBuffer.isRTR) errors++;
+        }
+        if (transmitBuffer.canStandardId != recieveBuffer.canStandardId) {
             errors++;
         }
-        lastVal = *val_ptr;
+        if (transmitBuffer.length != recieveBuffer.length) {
+            errors++;
+        }
         if (absolute_time_diff_us(timeStart, get_absolute_time()) > 1000000) {
             timeStart = get_absolute_time();
             printf("%d Kbyte/s    ", (transmittedMessages*8)/1000);
@@ -103,10 +104,7 @@ int main(){
             printf("Errors %d    ", errors);
             printf("Delay %d us\n", (uint32_t)delay);
         }
-        if (lastExtendedID != transmitBuffer.extendedId) {
-            printf("failed to transmit extended id");
-        }
-        lastExtendedID = transmitBuffer.extendedId;
+        (*(uint32_t*)transmitBuffer.data) ++;
         transmittedMessages++;
     }
 

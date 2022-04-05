@@ -112,6 +112,8 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid8Register, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbneid0Register, 1);
     spi_read_blocking(mcp2515->_spiPort, 0, &rxbndlcRegister, 1);
+    spi_read_blocking(mcp2515->_spiPort, 0, message->data, 8);
+    gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 
     // reading out the message header from registers
     message->canStandardId = (
@@ -146,12 +148,6 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     } else {
         message->length = rxbndlcRegister & 0b00001111;
     }
-
-    memcpy(message->data, NO_DATA, 8); // zero out data buffer
-
-    // continue reading the data payload of the message
-    spi_read_blocking(mcp2515->_spiPort, 0, message->data, message->length);
-    gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 }
 
 
@@ -184,6 +180,11 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         case 2: instruction = 0b01000100; break;
         default: printf("buffer doesn't exist");
     }
+
+    if (message->isRTR) {
+        message->length = 0;
+    }
+
     uint8_t txbnsidhRegister = message->canStandardId >> 3;
     uint8_t txbnsidlRegister = (
         message->canStandardId << 5 | 
