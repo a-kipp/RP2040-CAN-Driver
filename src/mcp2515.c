@@ -34,7 +34,7 @@ typedef struct Mcp2515 {
 
 
 typedef struct CanMessage {
-    uint16_t canStandardId;
+    uint16_t standardId;
     bool extendedIdEnabled;
     uint32_t extendedId;
     bool isRTR;
@@ -115,7 +115,7 @@ static void mcp2515_readRxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
     gpio_put(mcp2515->_pinCs, 1); // chip deselect, active low
 
     // reading out the message header from registers
-    message->canStandardId = (
+    message->standardId = (
         ((uint16_t)rxbnsidhRegister) << 3 |
         ((uint16_t)rxbnsidlRegister) >> 5
     );
@@ -184,9 +184,9 @@ static void mcp2515_loadTxBuffer(Mcp2515 *mcp2515, uint8_t bufferNum, CanMessage
         message->length = 0;
     }
 
-    uint8_t txbnsidhRegister = message->canStandardId >> 3;
+    uint8_t txbnsidhRegister = message->standardId >> 3;
     uint8_t txbnsidlRegister = (
-        message->canStandardId << 5 | 
+        message->standardId << 5 | 
         (message->extendedIdEnabled & 0b00000001) << 3 |
         message->extendedId >> 16
     );

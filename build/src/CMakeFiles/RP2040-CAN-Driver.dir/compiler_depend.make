@@ -72,10 +72,6 @@ src/CMakeFiles/RP2040-CAN-Driver.dir/main.c.obj: ../src/main.c \
   /usr/share/pico-sdk/src/rp2040/hardware_structs/include/hardware/structs/spi.h \
   /usr/share/pico-sdk/src/rp2040/hardware_regs/include/hardware/regs/spi.h \
   ../src/mcp2515.c \
-  /usr/arm-none-eabi/include/string.h \
-  /usr/arm-none-eabi/include/sys/_locale.h \
-  /usr/arm-none-eabi/include/strings.h \
-  /usr/arm-none-eabi/include/sys/string.h \
   ../src/register.h
 
 src/CMakeFiles/RP2040-CAN-Driver.dir/usr/share/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c.obj: /usr/share/pico-sdk/lib/tinyusb/src/class/audio/audio_device.c \
@@ -3312,16 +3308,6 @@ generated/pico_base/pico/config_autogen.h:
 
 ../src/mcp2515.c:
 
-/usr/arm-none-eabi/include/sys/_locale.h:
-
-/usr/share/pico-sdk/src/rp2040/hardware_structs/include/hardware/structs/watchdog.h:
-
-/usr/share/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c:
-
-/usr/arm-none-eabi/include/sys/_sigset.h:
-
-/usr/arm-none-eabi/include/strings.h:
-
 /usr/share/pico-sdk/src/rp2_common/hardware_claim/include/hardware/claim.h:
 
 ../src/register.h:
@@ -3349,6 +3335,16 @@ generated/pico_base/pico/config_autogen.h:
 /usr/share/pico-sdk/src/rp2_common/pico_bootrom/include/pico/bootrom.h:
 
 /usr/share/pico-sdk/lib/tinyusb/src/device/usbd.h:
+
+/usr/arm-none-eabi/include/sys/_locale.h:
+
+/usr/share/pico-sdk/src/rp2040/hardware_structs/include/hardware/structs/watchdog.h:
+
+/usr/share/pico-sdk/lib/tinyusb/src/class/dfu/dfu_device.c:
+
+/usr/arm-none-eabi/include/sys/_sigset.h:
+
+/usr/arm-none-eabi/include/strings.h:
 
 /usr/share/pico-sdk/lib/tinyusb/src/common/tusb_error.h:
 

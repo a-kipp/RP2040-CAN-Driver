@@ -15,22 +15,10 @@
 
 
 
-
-void printBuffer(CanMessage* sendMessage, CanMessage* recievedMessage) {
-    printf("length: %d %d\n", sendMessage->length, recievedMessage->length);
-    printf("extended Id Enabled: %d %d\n", sendMessage->extendedIdEnabled, recievedMessage->extendedIdEnabled);
-    printf("extended Id: %d %d\n", sendMessage->extendedId, recievedMessage->extendedId);
-    printf("standard Id: %d %d\n", sendMessage->canStandardId, recievedMessage->canStandardId);
-    printf("is RTR: %d %d\n", sendMessage->isRTR, recievedMessage->isRTR);
-    printf("data %d %d\n", *sendMessage->data, *recievedMessage->data);
-}
-
-
-
 int main(){
     stdio_init_all();
 
-    // This example will use SPI0 at 10MHz, wich is the maximum of the MCP2515.
+    // This example will use SPI0 at 1MHz, wich is the maximum of the MCP2515.
     spi_init(SPI_PORT, 1000 * 1000);
     gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
     gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
@@ -45,26 +33,19 @@ int main(){
     gpio_set_dir(PIN_CS_B, GPIO_OUT);
     gpio_put(PIN_CS_B, 1);
 
-    // Set CAN baudrate to 1MHz
     Mcp2515 canA;
     mcp2515_init(&canA, PIN_CS_A, CAN_BAUDRATE, SPI_PORT);
     // Controller is in listen-only mode after initialization.
-    // Set it to normal mode to send out messages.
     mcp2515_setOpmode(&canA, LOOPBACK_MODE);
     
-    //Mcp2515 canB;
-    //mcp2515_init(&canB, PIN_CS_B, CAN_BAUDRATE, SPI_PORT);
-    //mcp2515_setOpmode(&canB, LOOPBACK_MODE);
-
-
 
     // Speedtest
 
     CanMessage transmitBuffer = {0};
     transmitBuffer.length = 4;
     transmitBuffer.extendedIdEnabled = false;
-    transmitBuffer.canStandardId = 666;
-    transmitBuffer.isRTR = true;
+    transmitBuffer.standardId = 666;
+    transmitBuffer.isRTR = false;
 
     CanMessage recieveBuffer = {0};
 
@@ -91,7 +72,7 @@ int main(){
         if (*(uint32_t*)transmitBuffer.data != *(uint32_t*)recieveBuffer.data) {
             if (!transmitBuffer.isRTR) errors++;
         }
-        if (transmitBuffer.canStandardId != recieveBuffer.canStandardId) {
+        if (transmitBuffer.standardId != recieveBuffer.standardId) {
             errors++;
         }
         if (transmitBuffer.length != recieveBuffer.length) {
